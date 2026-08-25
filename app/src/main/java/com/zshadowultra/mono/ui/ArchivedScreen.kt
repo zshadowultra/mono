@@ -107,6 +107,7 @@ fun ArchivedScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () -> U
                     }
                 }
             }
+            }
         }
         Box(
             Modifier
