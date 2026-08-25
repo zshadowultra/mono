@@ -446,7 +446,6 @@ fun EditorScreen(
                 }
             }
         }
-    }
 
     if (showDelete) {
         AlertDialog(
