@@ -73,6 +73,7 @@ import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
 import com.zshadowultra.mono.data.NoteFont
+import com.zshadowultra.mono.ui.glass.LiquidToggle
 import com.zshadowultra.mono.ui.theme.BgDark
 import com.zshadowultra.mono.ui.theme.BgLight
 import com.zshadowultra.mono.ui.theme.CardDark
@@ -393,12 +394,13 @@ fun NoteTextScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () -> U
     val card = if (dark) CardDark else CardLight
     val fg = if (dark) Color.White else Color.Black
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(bg)
-            .systemBarsPadding()
-    ) {
+    Box(Modifier.fillMaxSize().background(bg)) {
+        Box(Modifier.fillMaxSize().background(bg).layerBackdrop(backdrop))
+        Column(
+            Modifier
+                .fillMaxSize()
+                .systemBarsPadding()
+        ) {
         Row(
             Modifier
                 .fillMaxWidth()
@@ -437,25 +439,17 @@ fun NoteTextScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () -> U
                 }
                 Spacer(Modifier.height(20.dp))
                 SettingsCard {
-                    SettingsRow(label = "Smaller Text", fg = fg, onClick = { vm.setSmallerText(!state.smallerText) }) {
-                        Surface(
-                            shape = RoundedCornerShape(50),
-                            color = if (state.smallerText) fg else fg.copy(alpha = 0.15f),
-                            modifier = Modifier.width(44.dp).height(26.dp)
-                        ) {
-                            Box(contentAlignment = if (state.smallerText) Alignment.CenterEnd else Alignment.CenterStart) {
-                                Box(
-                                    Modifier
-                                        .padding(3.dp)
-                                        .size(20.dp)
-                                        .background(if (dark) BgDark else BgLight, RoundedCornerShape(50))
-                                )
-                            }
-                        }
+                    SettingsRow(label = "Smaller Text", fg = fg) {
+                        LiquidToggle(
+                            selected = { state.smallerText },
+                            onSelect = { vm.setSmallerText(it) },
+                            backdrop = backdrop
+                        )
                     }
                 }
             }
         }
+    }
     }
 }
 
