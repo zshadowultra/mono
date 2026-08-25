@@ -65,9 +65,50 @@ fun ArchivedScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () -> U
         Modifier
             .fillMaxSize()
             .background(bg)
-            .layerBackdrop(backdrop)
     ) {
-        Column(
+        Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .systemBarsPadding()
+                    .padding(horizontal = 16.dp)
+            ) {
+                Spacer(Modifier.height(72.dp))
+                if (state.archived.isEmpty()) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Lucide.Inbox,
+                        contentDescription = null,
+                        tint = fg.copy(alpha = 0.3f),
+                        modifier = Modifier.size(40.dp)
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(text = "No archived notes", fontSize = 15.sp, color = fg.copy(alpha = 0.4f))
+                }
+            } else {
+                LazyColumn(
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(top = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
+                    items(state.archived, key = { it.id }) { note ->
+                        ArchivedNoteRow(note = note, cardColor = card, fg = fg,
+                            onRestore = { vm.restore(note.id, context) },
+                            onDelete = { vm.deleteArchived(note.id, context) })
+                    }
+                }
+            }
+        }
+        Box(
             Modifier
                 .fillMaxSize()
                 .systemBarsPadding()
@@ -105,39 +146,6 @@ fun ArchivedScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () -> U
                     modifier = Modifier.align(Alignment.Center)
                 )
                 Spacer(Modifier.width(44.dp).align(Alignment.CenterEnd))
-            }
-            if (state.archived.isEmpty()) {
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Lucide.Inbox,
-                        contentDescription = null,
-                        tint = fg.copy(alpha = 0.3f),
-                        modifier = Modifier.size(40.dp)
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Text(text = "No archived notes", fontSize = 15.sp, color = fg.copy(alpha = 0.4f))
-                }
-            } else {
-                LazyColumn(
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(top = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(bottom = 24.dp)
-                ) {
-                    items(state.archived, key = { it.id }) { note ->
-                        ArchivedNoteRow(note = note, cardColor = card, fg = fg,
-                            onRestore = { vm.restore(note.id, context) },
-                            onDelete = { vm.deleteArchived(note.id, context) })
-                    }
-                }
             }
         }
     }

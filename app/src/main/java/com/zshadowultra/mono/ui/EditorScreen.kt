@@ -135,9 +135,9 @@ fun EditorScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onOpenArchived: (
         Modifier
             .fillMaxSize()
             .background(bg)
-            .layerBackdrop(backdrop)
             .pointerInput(Unit) { detectTapGestures(onTap = { menuOpen = false }) }
     ) {
+        Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
         Column(
             Modifier
                 .fillMaxSize()
@@ -252,6 +252,7 @@ fun EditorScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onOpenArchived: (
             ) {
                 Text(text = "Done", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
             }
+        }
         }
 
         Box(
