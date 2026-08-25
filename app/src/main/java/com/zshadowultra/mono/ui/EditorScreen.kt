@@ -456,3 +456,22 @@ private fun BlobMenuRow(
         Text(text = label, fontSize = 15.sp, color = fg, modifier = Modifier.alpha(alpha))
     }
 }
+
+@Composable
+private fun CircularIconButton(
+    icon: ImageVector,
+    cd: String,
+    fg: Color,
+    onClick: () -> Unit
+) {
+    val dark = isSystemInDarkTheme()
+    Box(
+        Modifier
+            .size(36.dp)
+            .background(fg.copy(alpha = if (dark) 0.08f else 0.05f), RoundedCornerShape(18.dp))
+            .clickable(interactionSource = null, indication = null, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(imageVector = icon, contentDescription = cd, tint = fg, modifier = Modifier.size(20.dp))
+    }
+}
