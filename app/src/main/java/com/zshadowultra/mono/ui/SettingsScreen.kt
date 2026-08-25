@@ -26,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -143,6 +144,11 @@ fun SettingsScreen(
                             trailing = { Icon(Lucide.ChevronRight, null, Modifier.size(16.dp), tint = fg.copy(alpha = 0.3f)) },
                             onClick = onOpenNoteText
                         )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(start = 46.dp),
+                            thickness = 0.5.dp,
+                            color = fg.copy(alpha = 0.06f)
+                        )
                     }
                     Spacer(Modifier.height(20.dp))
                     SettingsCard {
@@ -160,6 +166,11 @@ fun SettingsScreen(
                                 }
                             },
                             trailing = { Icon(Lucide.ChevronRight, null, Modifier.size(16.dp), tint = fg.copy(alpha = 0.3f)) }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(start = 46.dp),
+                            thickness = 0.5.dp,
+                            color = fg.copy(alpha = 0.06f)
                         )
                         SettingsRow(
                             icon = Lucide.Smartphone,
@@ -182,6 +193,11 @@ fun SettingsScreen(
                                 )
                             }
                         }
+                        HorizontalDivider(
+                            modifier = Modifier.padding(start = 46.dp),
+                            thickness = 0.5.dp,
+                            color = fg.copy(alpha = 0.06f)
+                        )
                         SettingsRow(
                             icon = Lucide.Star,
                             label = "Rate Mononote",
@@ -193,6 +209,11 @@ fun SettingsScreen(
                                 )
                             }
                         }
+                        HorizontalDivider(
+                            modifier = Modifier.padding(start = 46.dp),
+                            thickness = 0.5.dp,
+                            color = fg.copy(alpha = 0.06f)
+                        )
                         SettingsRow(
                             icon = Lucide.Info,
                             label = "About Mononote",
@@ -495,6 +516,7 @@ fun LiveActivityScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () 
                     SettingsRow(label = "Default", fg = fg, onClick = { vm.setLaClear(false) }) {
                         if (!state.laClear) Icon(Lucide.Check, null, Modifier.size(16.dp), tint = fg)
                     }
+                    CardDivider(fg)
                     SettingsRow(label = "Clear", fg = fg, onClick = { vm.setLaClear(true) }) {
                         if (state.laClear) Icon(Lucide.Check, null, Modifier.size(16.dp), tint = fg)
                     }

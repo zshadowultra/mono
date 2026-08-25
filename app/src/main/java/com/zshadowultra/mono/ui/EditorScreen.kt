@@ -17,6 +17,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -183,7 +184,7 @@ fun EditorScreen(
                 ) {
                     AnimatedContent(
                         targetState = state.activeId,
-                        modifier = Modifier.width(240.dp),
+                        modifier = Modifier.fillMaxWidth(0.78f),
                         transitionSpec = {
                             (
                                 slideInHorizontally(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)) { it } +
@@ -199,7 +200,7 @@ fun EditorScreen(
                             Modifier
                                 .shadow(8.dp, RoundedCornerShape(22.dp))
                                 .background(card, RoundedCornerShape(22.dp))
-                                .height(220.dp)
+                                .aspectRatio(1f)
                         ) {
                             BasicTextField(
                                 value = state.text,
@@ -253,7 +254,7 @@ fun EditorScreen(
                             onClick = { if (liveEnabled) toggleLiveAction() },
                             enabled = liveEnabled,
                             shape = RoundedCornerShape(50),
-                            color = fg.copy(alpha = 0.06f),
+                            color = fg.copy(alpha = if (dark) 0.08f else 0.04f),
                             modifier = Modifier.alpha(if (liveEnabled) 1f else 0.35f)
                         ) {
                             Row(
@@ -350,7 +351,10 @@ fun EditorScreen(
                             }
                         } else null,
                         onDrawSurface = {
-                            drawRect(if (dark) Color.Black.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.5f))
+                            drawRect(
+                                if (dark) Color.Black.copy(alpha = lerp(0.06f, 0.30f, blobProgress))
+                                else Color.White.copy(alpha = lerp(0.10f, 0.50f, blobProgress))
+                            )
                         }
                     )
                     .clip(RoundedCornerShape(lerp(22.dp, 20.dp, blobProgress)))
