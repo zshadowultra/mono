@@ -4,3 +4,9 @@ keystore*
 local.properties
 .gradle/
 build/
+.kotlin/
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
