@@ -5,10 +5,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -53,6 +56,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -103,6 +108,8 @@ import com.zshadowultra.mono.ui.theme.BgLight
 import com.zshadowultra.mono.ui.theme.CardDark
 import com.zshadowultra.mono.ui.theme.CardLight
 import com.zshadowultra.mono.ui.theme.DoneLight
+import com.zshadowultra.mono.ui.theme.NotepadDark
+import com.zshadowultra.mono.ui.theme.NotepadLight
 import com.zshadowultra.mono.ui.theme.noteFontFamily
 import com.zshadowultra.mono.ui.theme.noteFontSize
 
@@ -146,12 +153,12 @@ fun EditorScreen(
             .background(bg)
             .pointerInput(Unit) { detectTapGestures(onTap = { menuOpen = false }) }
     ) {
-        Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .systemBarsPadding()
-            ) {
+        Box(Modifier.fillMaxSize().background(bg).layerBackdrop(backdrop))
+        Column(
+            Modifier
+                .fillMaxSize()
+                .systemBarsPadding()
+        ) {
                 Box(
                     Modifier
                         .fillMaxWidth()
@@ -201,8 +208,18 @@ fun EditorScreen(
                     ) { _ ->
                         Box(
                             Modifier
-                                .shadow(8.dp, RoundedCornerShape(22.dp))
-                                .background(card, RoundedCornerShape(22.dp))
+                                .drawBackdrop(
+                                    backdrop = backdrop,
+                                    shape = { RoundedCornerShape(22.dp) },
+                                    effects = {
+                                        vibrancy()
+                                        blur(4f.dp.toPx())
+                                        lens(16f.dp.toPx(), 32f.dp.toPx())
+                                    },
+                                    onDrawSurface = {
+                                        drawRect(if (dark) NotepadDark else NotepadLight)
+                                    }
+                                )
                                 .aspectRatio(1f)
                         ) {
                             val noteScroll = rememberScrollState()
@@ -329,20 +346,36 @@ fun EditorScreen(
             val interactiveHighlight = remember(menuScope) {
                 InteractiveHighlight(animationScope = menuScope)
             }
-            val blobProgress by animateFloatAsState(
+            val sizeEasing = CubicBezierEasing(0.8f, 0.3f, 0.5f, 0.8f)
+            val sizeP by animateFloatAsState(
                 targetValue = if (menuOpen) 1f else 0f,
-                animationSpec = spring(dampingRatio = 0.85f, stiffness = 1200f),
-                label = "menuBlob"
+                animationSpec = if (menuOpen) tween(300, easing = sizeEasing) else tween(250, easing = FastOutSlowInEasing),
+                label = "menuSize"
+            )
+            val radiusP by animateFloatAsState(
+                targetValue = if (menuOpen) 1f else 0f,
+                animationSpec = tween(700, easing = FastOutSlowInEasing),
+                label = "menuRadius"
+            )
+            val contentP by animateFloatAsState(
+                targetValue = if (menuOpen) 1f else 0f,
+                animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),
+                label = "menuContent"
+            )
+            val dotsAlpha by animateFloatAsState(
+                targetValue = if (menuOpen) 0f else 1f,
+                animationSpec = snap(),
+                label = "menuDots"
             )
             Box(
                 Modifier
                     .align(Alignment.TopEnd)
                     .padding(horizontal = 8.dp, vertical = 8.dp)
-                    .width(lerp(44.dp, 190.dp, blobProgress))
-                    .height(lerp(44.dp, 96.dp, blobProgress))
+                    .width(lerp(44.dp, 190.dp, sizeP))
+                    .height(lerp(44.dp, 96.dp, sizeP))
                     .drawBackdrop(
                         backdrop = backdrop,
-                        shape = { RoundedCornerShape(lerp(22.dp, 20.dp, blobProgress)) },
+                        shape = { RoundedCornerShape(lerp(22.dp, 20.dp, radiusP)) },
                         effects = {
                             vibrancy()
                             blur(4f.dp.toPx())
@@ -365,12 +398,12 @@ fun EditorScreen(
                         } else null,
                         onDrawSurface = {
                             drawRect(
-                                if (dark) Color.Black.copy(alpha = lerp(0.06f, 0.30f, blobProgress))
-                                else Color.White.copy(alpha = lerp(0.10f, 0.50f, blobProgress))
+                                if (dark) Color(0xFF2C2C2E).copy(alpha = lerp(0.9f, 0.4f, sizeP))
+                                else Color(0xFFFAFAFA).copy(alpha = lerp(0.95f, 0.55f, sizeP))
                             )
                         }
                     )
-                    .clip(RoundedCornerShape(lerp(22.dp, 20.dp, blobProgress)))
+                    .clip(RoundedCornerShape(lerp(22.dp, 20.dp, radiusP)))
                     .clickable(interactionSource = null, indication = null) {
                         if (!menuOpen) {
                             menuOpen = true
@@ -381,22 +414,31 @@ fun EditorScreen(
                     .then(interactiveHighlight.gestureModifier),
                 contentAlignment = Alignment.TopEnd
             ) {
-                Icon(
-                    imageVector = Lucide.Ellipsis,
-                    contentDescription = null,
-                    tint = fg,
-                    modifier = Modifier
-                        .padding(end = 12.dp)
-                        .size(44.dp)
-                        .alpha(1f - blobProgress)
-                )
-                if (blobProgress > 0.01f) {
-                    Column(Modifier.alpha(blobProgress)) {
-                        BlobMenuRow(icon = Lucide.Archive, label = "Archived Notes", fg = fg, alpha = stagger(blobProgress, 0)) {
+                Box(
+                    Modifier.size(44.dp).alpha(dotsAlpha),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Lucide.Ellipsis,
+                        contentDescription = null,
+                        tint = fg
+                    )
+                }
+                if (contentP > 0.01f) {
+                    Column(
+                        Modifier
+                            .graphicsLayer {
+                                scaleX = lerp(2f, 1f, contentP)
+                                scaleY = lerp(2f, 1f, contentP)
+                            }
+                            .blur(lerp(8.dp, 0.dp, contentP))
+                            .alpha(contentP)
+                    ) {
+                        BlobMenuRow(icon = Lucide.Archive, label = "Archived Notes", fg = fg, alpha = stagger(contentP, 0)) {
                             menuOpen = false
                             onOpenArchived()
                         }
-                        BlobMenuRow(icon = Lucide.Settings, label = "Settings", fg = fg, alpha = stagger(blobProgress, 1)) {
+                        BlobMenuRow(icon = Lucide.Settings, label = "Settings", fg = fg, alpha = stagger(contentP, 1)) {
                             menuOpen = false
                             onOpenSettings()
                         }

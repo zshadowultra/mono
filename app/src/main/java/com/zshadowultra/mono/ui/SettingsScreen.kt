@@ -67,6 +67,7 @@ import com.composables.icons.lucide.Type
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.ChevronLeft
 import com.kyant.backdrop.backdrops.LayerBackdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
@@ -107,6 +108,7 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .systemBarsPadding()
                 .verticalScroll(rememberScrollState())
+                .layerBackdrop(backdrop)
         ) {
             Row(
                 Modifier
