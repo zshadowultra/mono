@@ -4,13 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.using
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -39,7 +36,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun MonoAppUi(vm: EditorViewModel = viewModel()) {
     val state by vm.state.collectAsState()
@@ -51,10 +47,10 @@ fun MonoAppUi(vm: EditorViewModel = viewModel()) {
         targetState = showArchived,
         transitionSpec = {
             if (targetState) {
-                (slideInHorizontally { it } togetherWith slideOutHorizontally { -it / 3 })
+                slideInHorizontally { it } togetherWith slideOutHorizontally { -it / 3 }
             } else {
-                (slideInHorizontally { -it / 3 } togetherWith slideOutHorizontally { it })
-            }.using(SizeTransform(clip = false))
+                slideInHorizontally { -it / 3 } togetherWith slideOutHorizontally { it }
+            }
         },
         label = "nav"
     ) { archived ->

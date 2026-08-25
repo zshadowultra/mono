@@ -86,6 +86,7 @@ import com.composables.icons.lucide.Radio
 import com.composables.icons.lucide.Share
 import com.composables.icons.lucide.Trash2
 import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
@@ -106,7 +107,7 @@ import com.zshadowultra.mono.ui.theme.noteFontFamily
 import com.zshadowultra.mono.ui.theme.noteFontSize
 
 @Composable
-fun EditorScreen(backdrop: Backdrop, vm: EditorViewModel, onOpenArchived: () -> Unit) {
+fun EditorScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onOpenArchived: () -> Unit) {
     val state by vm.state.collectAsState()
     val dark = isSystemInDarkTheme()
     val bg = if (dark) BgDark else BgLight
@@ -166,11 +167,11 @@ fun EditorScreen(backdrop: Backdrop, vm: EditorViewModel, onOpenArchived: () -> 
                     .weight(1f),
                 transitionSpec = {
                     (
-                        slideOutHorizontally(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)) { -it } +
-                            fadeOut(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
-                        ) togetherWith (
                         slideInHorizontally(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)) { it } +
                             fadeIn(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
+                        ) togetherWith (
+                        slideOutHorizontally(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)) { -it } +
+                            fadeOut(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
                         )
                 },
                 label = "note"

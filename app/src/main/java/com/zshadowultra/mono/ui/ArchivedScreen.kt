@@ -39,6 +39,7 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Trash2
 import com.composables.icons.lucide.Undo2
 import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
@@ -52,7 +53,7 @@ import com.zshadowultra.mono.ui.theme.CardDark
 import com.zshadowultra.mono.ui.theme.CardLight
 
 @Composable
-fun ArchivedScreen(backdrop: Backdrop, vm: EditorViewModel, onBack: () -> Unit) {
+fun ArchivedScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () -> Unit) {
     val state by vm.state.collectAsState()
     val dark = isSystemInDarkTheme()
     val bg = if (dark) BgDark else BgLight
