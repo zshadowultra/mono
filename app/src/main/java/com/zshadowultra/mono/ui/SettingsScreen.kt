@@ -140,7 +140,7 @@ fun SettingsScreen(
                             icon = Lucide.Type,
                             label = "Note Text",
                             fg = fg,
-                            trailing = { Icon(Lucide.ChevronRight, null, tint = fg.copy(alpha = 0.3f), Modifier.size(16.dp)) },
+                            trailing = { Icon(Lucide.ChevronRight, null, Modifier.size(16.dp), tint = fg.copy(alpha = 0.3f)) },
                             onClick = onOpenNoteText
                         )
                     }
@@ -159,13 +159,13 @@ fun SettingsScreen(
                                     )
                                 }
                             },
-                            trailing = { Icon(Lucide.ChevronRight, null, tint = fg.copy(alpha = 0.3f), Modifier.size(16.dp)) }
+                            trailing = { Icon(Lucide.ChevronRight, null, Modifier.size(16.dp), tint = fg.copy(alpha = 0.3f)) }
                         )
                         SettingsRow(
                             icon = Lucide.Smartphone,
                             label = "Live Activity",
                             fg = fg,
-                            trailing = { Icon(Lucide.ChevronRight, null, tint = fg.copy(alpha = 0.3f), Modifier.size(16.dp)) },
+                            trailing = { Icon(Lucide.ChevronRight, null, Modifier.size(16.dp), tint = fg.copy(alpha = 0.3f)) },
                             onClick = onOpenLiveActivity
                         )
                     }
@@ -197,7 +197,7 @@ fun SettingsScreen(
                             icon = Lucide.Info,
                             label = "About Mononote",
                             fg = fg,
-                            trailing = { Icon(Lucide.ChevronRight, null, tint = fg.copy(alpha = 0.3f), Modifier.size(16.dp)) },
+                            trailing = { Icon(Lucide.ChevronRight, null, Modifier.size(16.dp), tint = fg.copy(alpha = 0.3f)) },
                             onClick = { showAbout = true }
                         )
                     }
@@ -402,7 +402,7 @@ fun NoteTextScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () -> U
                     ).forEach { (font, label) ->
                         SettingsRow(label = label, fg = fg, onClick = { vm.setFont(font) }) {
                             if (state.font == font) {
-                                Icon(Lucide.Check, null, tint = fg, Modifier.size(16.dp))
+                                Icon(Lucide.Check, null, Modifier.size(16.dp), tint = fg)
                             }
                         }
                     }
@@ -493,10 +493,10 @@ fun LiveActivityScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () 
             Column {
                 SettingsCard {
                     SettingsRow(label = "Default", fg = fg, onClick = { vm.setLaClear(false) }) {
-                        if (!state.laClear) Icon(Lucide.Check, null, tint = fg, Modifier.size(16.dp))
+                        if (!state.laClear) Icon(Lucide.Check, null, Modifier.size(16.dp), tint = fg)
                     }
                     SettingsRow(label = "Clear", fg = fg, onClick = { vm.setLaClear(true) }) {
-                        if (state.laClear) Icon(Lucide.Check, null, tint = fg, Modifier.size(16.dp))
+                        if (state.laClear) Icon(Lucide.Check, null, Modifier.size(16.dp), tint = fg)
                     }
                 }
             }
