@@ -40,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -58,6 +59,7 @@ import com.composables.icons.lucide.MessageSquare
 import com.composables.icons.lucide.Puzzle
 import com.composables.icons.lucide.Smartphone
 import com.composables.icons.lucide.Star
+import com.composables.icons.lucide.X
 import com.composables.icons.lucide.Type
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.ChevronLeft
@@ -148,16 +150,17 @@ fun SettingsScreen(
                             icon = Lucide.Puzzle,
                             label = "Widget",
                             fg = fg,
+                            onClick = {
+                                runCatching {
+                                    AppWidgetManager.getInstance(context).requestPinAppWidget(
+                                        ComponentName(context, NoteWidgetReceiver::class.java),
+                                        null,
+                                        null
+                                    )
+                                }
+                            },
                             trailing = { Icon(Lucide.ChevronRight, null, tint = fg.copy(alpha = 0.3f), Modifier.size(16.dp)) }
-                        ) {
-                            runCatching {
-                                AppWidgetManager.getInstance(context).requestPinAppWidget(
-                                    ComponentName(context, NoteWidgetReceiver::class.java),
-                                    null,
-                                    null
-                                )
-                            }
-                        }
+                        )
                         SettingsRow(
                             icon = Lucide.Smartphone,
                             label = "Live Activity",
@@ -257,7 +260,8 @@ fun SettingsScreen(
             },
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(top = 104.dp, end = 24.dp)
+                .padding(top = 104.dp, end = 24.dp),
+            backdrop = backdrop
         )
     }
 
@@ -289,7 +293,8 @@ private fun AppearancePopover(
     fg: Color,
     dark: Boolean,
     onSelect: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    backdrop: LayerBackdrop,
 ) {
     val progress by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
@@ -521,8 +526,8 @@ private fun SettingsRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
     label: String,
     fg: Color,
-    trailing: @Composable () -> Unit = {},
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    trailing: @Composable () -> Unit = {}
 ) {
     Row(
         Modifier
