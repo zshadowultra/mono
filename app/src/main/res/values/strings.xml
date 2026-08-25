@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Mononote</string>
+    <string name="widget_description">Your current note</string>
 </resources>

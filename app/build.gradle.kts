@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -44,5 +45,8 @@ dependencies {
     implementation(libs.backdrop)
     implementation(libs.shapes)
     implementation(libs.lucide.icons)
+    implementation(libs.androidx.datastore)
+    implementation(libs.glance.appwidget)
+    implementation(libs.kotlinx.serialization.json)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
