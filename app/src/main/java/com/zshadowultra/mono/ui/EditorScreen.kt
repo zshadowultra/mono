@@ -8,6 +8,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -32,13 +33,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -101,6 +102,7 @@ import com.zshadowultra.mono.ui.theme.BgDark
 import com.zshadowultra.mono.ui.theme.BgLight
 import com.zshadowultra.mono.ui.theme.CardDark
 import com.zshadowultra.mono.ui.theme.CardLight
+import com.zshadowultra.mono.ui.theme.DoneLight
 import com.zshadowultra.mono.ui.theme.noteFontFamily
 import com.zshadowultra.mono.ui.theme.noteFontSize
 
@@ -157,14 +159,15 @@ fun EditorScreen(
                         .height(44.dp)
                 ) {
                     if (state.activeId != null) {
-                        IconButton(
-                            onClick = {
+                        Box(Modifier.align(Alignment.CenterStart)) {
+                            CircularIconButton(
+                                icon = Lucide.Archive,
+                                cd = "Archive",
+                                fg = fg
+                            ) {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 vm.archive(context)
-                            },
-                            modifier = Modifier.align(Alignment.CenterStart)
-                        ) {
-                            Icon(imageVector = Lucide.Archive, contentDescription = "Archive", tint = fg)
+                            }
                         }
                     }
                     Text(
@@ -202,6 +205,8 @@ fun EditorScreen(
                                 .background(card, RoundedCornerShape(22.dp))
                                 .aspectRatio(1f)
                         ) {
+                            val noteScroll = rememberScrollState()
+                            Box(Modifier.fillMaxSize().verticalScroll(noteScroll)) {
                             BasicTextField(
                                 value = state.text,
                                 onValueChange = vm::onTextChange,
@@ -213,9 +218,8 @@ fun EditorScreen(
                                 ),
                                 cursorBrush = SolidColor(fg),
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(16.dp)
-                                    .clip(RoundedCornerShape(22.dp)),
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
                                 decorationBox = { inner ->
                                     Box {
                                         if (state.text.isEmpty()) {
@@ -232,21 +236,26 @@ fun EditorScreen(
                                     }
                                 },
                             )
+                            }
                         }
                     }
                 }
 
                 Spacer(Modifier.weight(1f))
 
-                AnimatedVisibility(visible = !imeVisible) {
+                AnimatedVisibility(
+                    visible = !imeVisible,
+                    enter = fadeIn(snap()),
+                    exit = fadeOut(snap())
+                ) {
                     Row(
                         Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 28.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = { showDelete = true }) {
-                            Icon(imageVector = Lucide.Trash2, contentDescription = "Delete", tint = fg)
+                        CircularIconButton(icon = Lucide.Trash2, cd = "Delete", fg = fg) {
+                            showDelete = true
                         }
                         Spacer(Modifier.weight(1f))
                         val liveEnabled = state.text.isNotBlank() || state.live
@@ -276,13 +285,17 @@ fun EditorScreen(
                             }
                         }
                         Spacer(Modifier.weight(1f))
-                        IconButton(onClick = { vm.clearText() }) {
-                            Icon(imageVector = Lucide.Eraser, contentDescription = "Clear", tint = fg)
+                        CircularIconButton(icon = Lucide.Eraser, cd = "Clear", fg = fg) {
+                            vm.clearText()
                         }
                     }
                 }
 
-                AnimatedVisibility(visible = imeVisible) {
+                AnimatedVisibility(
+                    visible = imeVisible,
+                    enter = fadeIn(snap()),
+                    exit = fadeOut(snap())
+                ) {
                     Column(Modifier.windowInsetsPadding(WindowInsets.navigationBars)) {
                         Button(
                             onClick = {
@@ -295,7 +308,7 @@ fun EditorScreen(
                                 .height(50.dp),
                             shape = RoundedCornerShape(25.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (dark) Color.White else Color.Black,
+                                containerColor = if (dark) Color.White else DoneLight,
                                 contentColor = if (dark) Color.Black else Color.White
                             )
                         ) {

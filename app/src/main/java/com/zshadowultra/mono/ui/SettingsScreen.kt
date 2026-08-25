@@ -8,6 +8,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -94,7 +96,12 @@ fun SettingsScreen(
     var appearanceOpen by remember { mutableStateOf(false) }
     var showAbout by remember { mutableStateOf(false) }
 
-    Box(Modifier.fillMaxSize().background(bg)) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(bg)
+            .pointerInput(Unit) { detectTapGestures(onTap = { appearanceOpen = false }) }
+    ) {
         Column(
             Modifier
                 .fillMaxSize()
@@ -128,7 +135,8 @@ fun SettingsScreen(
                         SettingsRow(
                             icon = Lucide.Contrast,
                             label = "Appearance",
-                            fg = fg
+                            fg = fg,
+                            onClick = { appearanceOpen = true }
                         ) {
                             Text(
                                 text = appearanceLabel(state.appearance),
@@ -185,14 +193,15 @@ fun SettingsScreen(
                         SettingsRow(
                             icon = Lucide.MessageSquare,
                             label = "Give Feedback",
-                            fg = fg
-                        ) {
-                            runCatching {
-                                context.startActivity(
-                                    Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:hello@digitalminimalist.com"))
-                                )
+                            fg = fg,
+                            onClick = {
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:hello@digitalminimalist.com"))
+                                    )
+                                }
                             }
-                        }
+                        )
                         HorizontalDivider(
                             modifier = Modifier.padding(start = 46.dp),
                             thickness = 0.5.dp,
@@ -201,14 +210,15 @@ fun SettingsScreen(
                         SettingsRow(
                             icon = Lucide.Star,
                             label = "Rate Mononote",
-                            fg = fg
-                        ) {
-                            runCatching {
-                                context.startActivity(
-                                    Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.zshadowultra.mono"))
-                                )
+                            fg = fg,
+                            onClick = {
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.zshadowultra.mono"))
+                                    )
+                                }
                             }
-                        }
+                        )
                         HorizontalDivider(
                             modifier = Modifier.padding(start = 46.dp),
                             thickness = 0.5.dp,
@@ -260,12 +270,6 @@ fun SettingsScreen(
                     }
                 }
 
-                if (appearanceOpen) {
-                    Box(Modifier.matchParentSize().clickable(
-                        interactionSource = null,
-                        indication = null
-                    ) { appearanceOpen = false })
-                }
             }
         }
 

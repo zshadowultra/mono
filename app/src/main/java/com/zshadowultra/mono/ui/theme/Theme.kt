@@ -12,9 +12,13 @@ import androidx.compose.ui.unit.sp
 import com.zshadowultra.mono.data.NoteFont
 
 val BgLight = Color(0xFFF2F2F7)
-val CardLight = Color(0xFFFBFBFD)
+val CardLight = Color(0xFFFDFDFD)
+val NotepadLight = Color(0xFFF6F6F6)
 val BgDark = Color(0xFF000000)
 val CardDark = Color(0xFF1C1C1E)
+val NotepadDark = Color(0xFF1C1C1E)
+val DoneLight = Color(0xFF131313)
+val DotsLight = Color(0xFFFAFAFA)
 
 @Composable
 fun MonoTheme(
