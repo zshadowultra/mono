@@ -420,7 +420,8 @@ fun NoteTextScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () -> U
                         NoteFont.DEFAULT to "Default",
                         NoteFont.SERIF to "Serif",
                         NoteFont.MONO to "Mono",
-                    ).forEach { (font, label) ->
+                    ).forEachIndexed { i, (font, label) ->
+                        if (i > 0) CardDivider(fg)
                         SettingsRow(label = label, fg = fg, onClick = { vm.setFont(font) }) {
                             if (state.font == font) {
                                 Icon(Lucide.Check, null, Modifier.size(16.dp), tint = fg)
@@ -574,4 +575,13 @@ private fun SettingsRow(
         Text(text = label, fontSize = 15.sp, color = fg, modifier = Modifier.weight(1f))
         trailing()
     }
+}
+
+@Composable
+private fun CardDivider(fg: Color) {
+    HorizontalDivider(
+        modifier = Modifier.padding(start = 46.dp),
+        thickness = 0.5.dp,
+        color = fg.copy(alpha = 0.06f)
+    )
 }
