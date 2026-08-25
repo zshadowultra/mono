@@ -6,9 +6,10 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import java.io.IOException
 
@@ -32,136 +33,127 @@ data class NotesData(
 
 enum class NoteFont { DEFAULT, SERIF, MONO }
 
-enum class NoteSize { SMALL, MEDIUM, LARGE }
-
 data class Settings(
     val font: NoteFont = NoteFont.DEFAULT,
-    val size: NoteSize = NoteSize.MEDIUM,
+    val smallerText: Boolean = false,
     val live: Boolean = false,
+    val appearance: String = "system",
+    val laClear: Boolean = false,
 )
 
 class NotesRepository(context: Context) {
 
     private val dataStore = context.applicationContext.dataStore
-
     private val json = Json { ignoreUnknownKeys = true }
 
-    val data: Flow<NotesData> = dataStore.data.map { prefs ->
-        prefs[stringPreferencesKey("notes_data")]?.let { encoded ->
-            try {
-                json.decodeFromString<NotesData>(encoded)
-            } catch (e: IOException) {
-                NotesData()
-            } catch (e: SerializationException) {
-                NotesData()
-            }
-        } ?: NotesData()
-    }
+    val data: Flow<NotesData> = dataStore.data
+        .catch { e -> if (e is IOException) emit(androidx.datastore.preferences.core.emptyPreferences()) else throw e }
+        .map { prefs ->
+            prefs[stringPreferencesKey("notes_data")]?.let { raw ->
+                runCatching { json.decodeFromString<NotesData>(raw) }.getOrDefault(NotesData())
+            } ?: NotesData()
+        }
 
-    val settings: Flow<Settings> = dataStore.data.map { prefs ->
-        Settings(
-            font = prefs[stringPreferencesKey("font")]?.let { stored ->
-                runCatching { NoteFont.valueOf(stored) }.getOrNull()
-            } ?: NoteFont.DEFAULT,
-            size = prefs[stringPreferencesKey("size")]?.let { stored ->
-                runCatching { NoteSize.valueOf(stored) }.getOrNull()
-            } ?: NoteSize.MEDIUM,
-            live = prefs[booleanPreferencesKey("live")] ?: false,
-        )
-    }
+    val settings: Flow<Settings> = dataStore.data
+        .catch { e -> if (e is IOException) emit(androidx.datastore.preferences.core.emptyPreferences()) else throw e }
+        .map { prefs ->
+            Settings(
+                font = prefs[stringPreferencesKey("font")]?.let { name ->
+                    runCatching { NoteFont.valueOf(name) }.getOrDefault(NoteFont.DEFAULT)
+                } ?: NoteFont.DEFAULT,
+                smallerText = prefs[booleanPreferencesKey("smaller_text")] ?: false,
+                live = prefs[booleanPreferencesKey("live")] ?: false,
+                appearance = prefs[stringPreferencesKey("appearance")] ?: "system",
+                laClear = prefs[booleanPreferencesKey("la_clear")] ?: false,
+            )
+        }
 
     suspend fun saveActive(content: String) {
-        val now = System.currentTimeMillis()
         dataStore.edit { prefs ->
-            val current = decode(prefs[stringPreferencesKey("notes_data")])
-            if (content.isBlank() && current.active == null) return@edit
-            val updated = if (content.isBlank()) {
-                current.copy(active = current.active?.copy(content = "", updatedAt = now))
-            } else {
-                val active = current.active
-                if (active == null) {
-                    current.copy(
-                        active = Note(id = current.nextId, content = content, createdAt = now, updatedAt = now),
-                        nextId = current.nextId + 1,
-                    )
-                } else {
-                    current.copy(active = active.copy(content = content, updatedAt = now))
-                }
+            val current = decode(prefs)
+            val now = System.currentTimeMillis()
+            val updated = when {
+                content.isBlank() && current.active == null -> current
+                content.isBlank() && current.active != null -> current.copy(active = current.active.copy(content = "", updatedAt = now))
+                current.active == null -> current.copy(
+                    active = Note(id = current.nextId, content = content, createdAt = now, updatedAt = now),
+                    nextId = current.nextId + 1,
+                )
+                else -> current.copy(active = current.active.copy(content = content, updatedAt = now))
             }
-            prefs[stringPreferencesKey("notes_data")] = json.encodeToString(updated)
+            prefs[stringPreferencesKey("notes_data")] = json.encodeToString(NotesData.serializer(), updated)
         }
     }
 
     suspend fun archiveActive(): Note? {
-        val now = System.currentTimeMillis()
-        var archivedNote: Note? = null
+        var archived: Note? = null
         dataStore.edit { prefs ->
-            val current = decode(prefs[stringPreferencesKey("notes_data")])
+            val current = decode(prefs)
             val active = current.active ?: return@edit
-            val moved = active.copy(archivedAt = now)
-            archivedNote = moved
+            archived = active.copy(archivedAt = System.currentTimeMillis())
             prefs[stringPreferencesKey("notes_data")] = json.encodeToString(
-                current.copy(active = null, archived = listOf(moved) + current.archived),
+                NotesData.serializer(),
+                current.copy(active = null, archived = listOf(archived!!) + current.archived),
             )
         }
-        return archivedNote
+        return archived
     }
 
     suspend fun deleteActive() {
         dataStore.edit { prefs ->
-            val current = decode(prefs[stringPreferencesKey("notes_data")])
+            val current = decode(prefs)
             prefs[stringPreferencesKey("notes_data")] =
-                json.encodeToString(current.copy(active = null))
+                json.encodeToString(NotesData.serializer(), current.copy(active = null))
         }
     }
 
     suspend fun restore(noteId: Long) {
-        val now = System.currentTimeMillis()
         dataStore.edit { prefs ->
-            val current = decode(prefs[stringPreferencesKey("notes_data")])
+            val current = decode(prefs)
             val note = current.archived.firstOrNull { it.id == noteId } ?: return@edit
-            val remaining = current.archived.filterNot { it.id == noteId }
+            val now = System.currentTimeMillis()
             val restored = note.copy(archivedAt = null, updatedAt = now)
-            val updated = when (val active = current.active) {
-                null -> current.copy(active = restored, archived = remaining)
-                else -> {
-                    val rearchived = active.copy(archivedAt = now)
-                    current.copy(active = restored, archived = listOf(rearchived) + remaining)
-                }
+            val newData = if (current.active == null) {
+                current.copy(active = restored, archived = current.archived.filterNot { it.id == noteId })
+            } else {
+                val reArchived = current.active.copy(archivedAt = now)
+                current.copy(
+                    active = restored,
+                    archived = listOf(reArchived) + current.archived.filterNot { it.id == noteId },
+                )
             }
-            prefs[stringPreferencesKey("notes_data")] = json.encodeToString(updated)
+            prefs[stringPreferencesKey("notes_data")] = json.encodeToString(NotesData.serializer(), newData)
         }
     }
 
     suspend fun deleteArchived(noteId: Long) {
         dataStore.edit { prefs ->
-            val current = decode(prefs[stringPreferencesKey("notes_data")])
+            val current = decode(prefs)
             prefs[stringPreferencesKey("notes_data")] = json.encodeToString(
+                NotesData.serializer(),
                 current.copy(archived = current.archived.filterNot { it.id == noteId }),
             )
         }
     }
 
-    suspend fun setFont(font: NoteFont) {
-        dataStore.edit { it[stringPreferencesKey("font")] = font.name }
-    }
-
-    suspend fun setSize(size: NoteSize) {
-        dataStore.edit { it[stringPreferencesKey("size")] = size.name }
-    }
-
-    suspend fun setLive(live: Boolean) {
-        dataStore.edit { it[booleanPreferencesKey("live")] = live }
-    }
-
-    private fun decode(encoded: String?): NotesData {
-        if (encoded == null) return NotesData()
-        return try {
-            json.decodeFromString<NotesData>(encoded)
-        } catch (e: IOException) {
-            NotesData()
-        } catch (e: SerializationException) {
-            NotesData()
+    suspend fun deleteArchived(ids: Set<Long>) {
+        dataStore.edit { prefs ->
+            val current = decode(prefs)
+            prefs[stringPreferencesKey("notes_data")] = json.encodeToString(
+                NotesData.serializer(),
+                current.copy(archived = current.archived.filterNot { it.id in ids }),
+            )
         }
     }
+
+    suspend fun setFont(font: NoteFont) = dataStore.edit { it[stringPreferencesKey("font")] = font.name }
+    suspend fun setSmallerText(smaller: Boolean) = dataStore.edit { it[booleanPreferencesKey("smaller_text")] = smaller }
+    suspend fun setLive(live: Boolean) = dataStore.edit { it[booleanPreferencesKey("live")] = live }
+    suspend fun setAppearance(appearance: String) = dataStore.edit { it[stringPreferencesKey("appearance")] = appearance }
+    suspend fun setLaClear(clear: Boolean) = dataStore.edit { it[booleanPreferencesKey("la_clear")] = clear }
+
+    private fun decode(prefs: androidx.datastore.preferences.core.Preferences): NotesData =
+        prefs[stringPreferencesKey("notes_data")]?.let { raw ->
+            runCatching { json.decodeFromString<NotesData>(raw) }.getOrDefault(NotesData())
+        } ?: NotesData()
 }

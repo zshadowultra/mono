@@ -1,13 +1,12 @@
 package com.zshadowultra.mono.ui
 
-import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.zshadowultra.mono.MonoApp
+import com.zshadowultra.mono.data.Note
 import com.zshadowultra.mono.data.NoteFont
-import com.zshadowultra.mono.data.NoteSize
-import com.zshadowultra.mono.data.NotesRepository
+import com.zshadowultra.mono.data.Settings
 import com.zshadowultra.mono.live.GoLiveManager
 import com.zshadowultra.mono.widget.updateNoteWidget
 import kotlinx.coroutines.Job
@@ -15,153 +14,134 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class EditorViewModel(app: Application) : AndroidViewModel(app) {
-
-    private val repository = (app as MonoApp).repository
-    private val appScope = (app as MonoApp).appScope
+class EditorViewModel(app: android.app.Application) : AndroidViewModel(app) {
 
     data class UiState(
         val loaded: Boolean = false,
         val text: String = "",
         val activeId: Long? = null,
-        val archived: List<com.zshadowultra.mono.data.Note> = emptyList(),
+        val archived: List<Note> = emptyList(),
         val font: NoteFont = NoteFont.DEFAULT,
-        val size: NoteSize = NoteSize.MEDIUM,
+        val smallerText: Boolean = false,
         val live: Boolean = false,
+        val appearance: String = "system",
+        val laClear: Boolean = false,
     )
 
-    private val mutableState = MutableStateFlow(UiState())
+    private val repo = (app as MonoApp).repository
+    private val external = MutableStateFlow(UiState())
+    private val localText = MutableStateFlow<String?>(null)
+    private var saveJob: Job? = null
 
-    val state: StateFlow<UiState> = mutableState.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Eagerly,
-        initialValue = UiState(),
-    )
-
-    private var debounceJob: Job? = null
-
-    init {
-        viewModelScope.launch {
-            repository.data.collect { data ->
-                val current = mutableState.value
-                if (data.active?.id != current.activeId) {
-                    mutableState.value = current.copy(
-                        loaded = true,
-                        text = data.active?.content.orEmpty(),
-                        activeId = data.active?.id,
-                        archived = data.archived,
-                    )
-                    debounceJob?.cancel()
-                } else {
-                    mutableState.value = current.copy(
-                        loaded = true,
-                        archived = data.archived,
-                        activeId = data.active?.id,
-                    )
-                }
-            }
-        }
-        viewModelScope.launch {
-            repository.settings.collect { settings ->
-                mutableState.value = mutableState.value.copy(
-                    font = settings.font,
-                    size = settings.size,
-                    live = settings.live,
-                )
-            }
-        }
-    }
+    val state: StateFlow<UiState> =
+        combine(repo.data, repo.settings, external, localText) { data, settings, ext, text ->
+            val active = data.active
+            val adopted = if (active?.id != ext.activeId) (active?.content ?: "") else ext.text
+            UiState(
+                loaded = true,
+                text = text ?: adopted,
+                activeId = active?.id,
+                archived = data.archived,
+                font = settings.font,
+                smallerText = settings.smallerText,
+                live = settings.live,
+                appearance = settings.appearance,
+                laClear = settings.laClear,
+            )
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, UiState())
 
     fun onTextChange(text: String) {
-        mutableState.value = mutableState.value.copy(text = text)
-        debounceJob?.cancel()
-        debounceJob = viewModelScope.launch {
+        localText.value = text
+        saveJob?.cancel()
+        saveJob = viewModelScope.launch {
             delay(600)
             persist()
         }
     }
 
     fun done() {
-        debounceJob?.cancel()
-        persist()
+        saveJob?.cancel()
+        viewModelScope.launch { persist() }
+    }
+
+    fun clearText() {
+        localText.value = ""
+        saveJob?.cancel()
+        viewModelScope.launch { persist() }
+    }
+
+    private suspend fun persist() {
+        val text = localText.value ?: state.value.text
+        repo.saveActive(text)
+        val ctx = getApplication<MonoApp>()
+        if (state.value.live) GoLiveManager.update(ctx, text, state.value.laClear)
+        runCatching { updateNoteWidget(ctx) }
     }
 
     fun archive(context: Context) {
-        if (mutableState.value.live) GoLiveManager.stop(context)
-        appScope.launch {
-            repository.archiveActive()
-            refreshWidgetSafely(context)
+        viewModelScope.launch {
+            if (state.value.live) {
+                GoLiveManager.stop(context)
+                repo.setLive(false)
+            }
+            repo.archiveActive()
+            localText.value = ""
+            runCatching { updateNoteWidget(context) }
         }
     }
 
     fun delete(context: Context) {
-        if (mutableState.value.live) GoLiveManager.stop(context)
-        appScope.launch {
-            repository.deleteActive()
-            refreshWidgetSafely(context)
+        viewModelScope.launch {
+            if (state.value.live) {
+                GoLiveManager.stop(context)
+                repo.setLive(false)
+            }
+            repo.deleteActive()
+            localText.value = ""
+            runCatching { updateNoteWidget(context) }
         }
     }
 
     fun restore(id: Long, context: Context) {
-        appScope.launch {
-            repository.restore(id)
-            refreshWidgetSafely(context)
+        viewModelScope.launch {
+            repo.restore(id)
+            runCatching { updateNoteWidget(context) }
         }
     }
 
     fun deleteArchived(id: Long, context: Context) {
-        appScope.launch {
-            repository.deleteArchived(id)
+        viewModelScope.launch {
+            repo.deleteArchived(id)
+            runCatching { updateNoteWidget(context) }
         }
     }
 
-    fun setFont(font: NoteFont) {
-        appScope.launch {
-            repository.setFont(font)
+    fun deleteArchived(ids: Set<Long>, context: Context) {
+        viewModelScope.launch {
+            repo.deleteArchived(ids)
+            runCatching { updateNoteWidget(context) }
         }
     }
 
-    fun setSize(size: NoteSize) {
-        appScope.launch {
-            repository.setSize(size)
-        }
-    }
+    fun setFont(font: NoteFont) = viewModelScope.launch { repo.setFont(font) }
+    fun setSmallerText(smaller: Boolean) = viewModelScope.launch { repo.setSmallerText(smaller) }
+    fun setAppearance(appearance: String) = viewModelScope.launch { repo.setAppearance(appearance) }
+    fun setLaClear(clear: Boolean) = viewModelScope.launch { repo.setLaClear(clear) }
 
     fun toggleLive(context: Context) {
-        val live = !mutableState.value.live
-        if (live) {
-            GoLiveManager.start(context, mutableState.value.text)
-        } else {
-            GoLiveManager.stop(context)
-        }
-        appScope.launch {
-            repository.setLive(live)
-        }
-    }
-
-    private fun persist() {
-        val snapshot = mutableState.value
-        val live = snapshot.live
-        appScope.launch {
-            repository.saveActive(snapshot.text)
+        viewModelScope.launch {
+            val live = state.value.live
             if (live) {
-                try {
-                    GoLiveManager.update(getApplication(), snapshot.text)
-                } catch (e: Exception) {
-                }
-            }
-            refreshWidgetSafely(getApplication())
-        }
-    }
-
-    private fun refreshWidgetSafely(context: Context) {
-        appScope.launch {
-            try {
-                updateNoteWidget(context.applicationContext)
-            } catch (e: Exception) {
+                GoLiveManager.stop(context)
+                repo.setLive(false)
+            } else {
+                GoLiveManager.start(context, state.value.text, state.value.laClear)
+                repo.setLive(true)
             }
         }
     }

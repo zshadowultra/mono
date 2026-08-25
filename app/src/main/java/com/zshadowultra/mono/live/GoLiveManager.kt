@@ -29,20 +29,20 @@ object GoLiveManager {
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
-    fun start(context: Context, text: String) {
+    fun start(context: Context, text: String, clear: Boolean = false) {
         ensureChannel(context)
-        notify(context, text)
+        notify(context, text, clear)
     }
 
-    fun update(context: Context, text: String) {
-        notify(context, text)
+    fun update(context: Context, text: String, clear: Boolean = false) {
+        notify(context, text, clear)
     }
 
     fun stop(context: Context) {
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
     }
 
-    private fun notify(context: Context, text: String) {
+    private fun notify(context: Context, text: String, clear: Boolean) {
         val openIntent = PendingIntent.getActivity(
             context,
             0,
@@ -57,7 +57,7 @@ object GoLiveManager {
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_note)
-            .setContentTitle("Note")
+            .setContentTitle(if (clear) null else "Note")
             .setContentText(text.ifBlank { " " })
             .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .setOngoing(true)
