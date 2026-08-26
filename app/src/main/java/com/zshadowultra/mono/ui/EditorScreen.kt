@@ -444,7 +444,9 @@ fun EditorScreen(
                         }
                     }
                 }
+            }
 
+            if (!menuOpen) {
             Box(
                 Modifier
                     .align(Alignment.TopEnd)
@@ -483,7 +485,7 @@ fun EditorScreen(
                     tint = fg
                 )
             }
-        }
+            }
         }
 
     if (showDelete) {
