@@ -87,6 +87,8 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import android.Manifest
 import android.os.Build
@@ -212,16 +214,12 @@ fun EditorScreen(
                         targetState = state.activeId,
                         modifier = Modifier.fillMaxWidth(cardWidth),
                         transitionSpec = {
-                            (
-                                slideInHorizontally(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)) { it } +
-                                    fadeIn(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
-                                ) togetherWith (
-                                slideOutHorizontally(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)) { -it } +
-                                    fadeOut(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
-                                )
+                            fadeIn(tween(150, easing = FastOutSlowInEasing)) togetherWith
+                                    fadeOut(tween(150, easing = FastOutSlowInEasing))
                         },
                         label = "note"
                     ) { _ ->
+                        val focusRequester = remember { FocusRequester() }
                         Box(
                             Modifier
                                 .drawBackdrop(
@@ -237,6 +235,10 @@ fun EditorScreen(
                                     }
                                 )
                                 .aspectRatio(1f)
+                                .clickable(
+                                    interactionSource = null,
+                                    indication = null
+                                ) { focusRequester.requestFocus() }
                         ) {
                             val noteScroll = rememberScrollState()
                             Box(Modifier.fillMaxSize().verticalScroll(noteScroll)) {
@@ -253,6 +255,7 @@ fun EditorScreen(
                                 cursorBrush = SolidColor(fg),
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .focusRequester(focusRequester)
                                     .onFocusChanged { noteFocused = it.isFocused }
                                     .padding(16.dp),
                                 decorationBox = { inner ->
@@ -278,39 +281,46 @@ fun EditorScreen(
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
-
-                AnimatedVisibility(
-                    visible = noteFocused,
-                    enter = fadeIn(snap()),
-                    exit = fadeOut(snap())
-                ) {
-                Button(
-                    onClick = {
-                        focusManager.clearFocus()
-                        vm.done()
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .height(50.dp),
-                    shape = RoundedCornerShape(25.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (dark) Color.White else DoneLight,
-                        contentColor = if (dark) Color.Black else Color.White
-                    )
-                ) {
-                    Text(text = "Done", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                }
-                }
-
                 Spacer(Modifier.weight(1f))
 
-                AnimatedVisibility(
-                    visible = !noteFocused,
-                    enter = fadeIn(snap()),
-                    exit = fadeOut(snap())
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.Center
                 ) {
+                    androidx.compose.animation.AnimatedContent(
+                        targetState = noteFocused,
+                        transitionSpec = {
+                            (fadeIn(tween(180, easing = FastOutSlowInEasing)) + slideInVertically(tween(220, easing = FastOutSlowInEasing)) { it / 3 }) togetherWith
+                            (fadeOut(tween(160)) + slideOutVertically(tween(200)) { it / 3 })
+                        },
+                        label = "bottomBar"
+                    ) { focused ->
+                        if (focused) {
+                            Button(
+                                onClick = {
+                                    focusManager.clearFocus()
+                                    vm.done()
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(52.dp),
+                                shape = RoundedCornerShape(26.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (dark) Color.White else DoneLight,
+                                    contentColor = if (dark) Color.Black else Color.White
+                                )
+                            ) {
+                                Text(text = "Done", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                            }
+                        } else {
+                            Row(
+                                Modifier
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -324,6 +334,7 @@ fun EditorScreen(
                         val liveEnabled = state.text.isNotBlank() || state.live
                         Box(
                             modifier = Modifier
+                                .height(48.dp)
                                 .alpha(if (liveEnabled) 1f else 0.35f)
                                 .drawBackdrop(
                                     backdrop = backdrop,
@@ -341,10 +352,11 @@ fun EditorScreen(
                                     interactionSource = null,
                                     indication = null,
                                     enabled = liveEnabled
-                                ) { toggleLiveAction() }
+                                ) { toggleLiveAction() },
+                            contentAlignment = Alignment.Center
                         ) {
                             Row(
-                                Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                                Modifier.padding(horizontal = 20.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
@@ -352,11 +364,11 @@ fun EditorScreen(
                                     imageVector = if (state.live) Lucide.CircleDot else Lucide.Circle,
                                     contentDescription = null,
                                     tint = fg,
-                                    modifier = Modifier.size(14.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
                                 Text(
                                     text = if (state.live) "Stop Live" else "Go Live",
-                                    fontSize = 15.sp,
+                                    fontSize = 16.sp,
                                     color = fg
                                 )
                             }
@@ -365,9 +377,9 @@ fun EditorScreen(
                         CircularIconButton(icon = Lucide.Eraser, cd = "Clear", fg = fg, backdrop = backdrop, dark = dark) {
                             vm.clearText()
                         }
+                        }
                     }
                 }
-
             }
         }
 
@@ -382,22 +394,22 @@ fun EditorScreen(
             }
             val posP by animateFloatAsState(
                 targetValue = if (menuOpen) 1f else 0f,
-                animationSpec = spring(dampingRatio = 0.6f, stiffness = 300f),
+                animationSpec = if (menuOpen) spring(dampingRatio = 0.58f, stiffness = 144f) else spring(dampingRatio = 0.82f, stiffness = 130f),
                 label = "menuPos"
             )
             val radiusP by animateFloatAsState(
                 targetValue = if (menuOpen) 1f else 0f,
-                animationSpec = tween(700, easing = FastOutSlowInEasing),
+                animationSpec = tween(220, easing = FastOutSlowInEasing),
                 label = "menuRadius"
             )
             val contentP by animateFloatAsState(
                 targetValue = if (menuOpen) 1f else 0f,
-                animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),
+                animationSpec = spring(dampingRatio = 0.85f, stiffness = 137f),
                 label = "menuContent"
             )
             val dotsAlpha by animateFloatAsState(
                 targetValue = if (menuOpen) 0f else 1f,
-                animationSpec = snap(),
+                animationSpec = if (menuOpen) tween(10, easing = FastOutSlowInEasing) else tween(150, easing = FastOutSlowInEasing),
                 label = "menuDots"
             )
             Box(
@@ -428,10 +440,10 @@ fun EditorScreen(
                     Column(
                         Modifier
                             .graphicsLayer {
-                                scaleX = lerp(2f, 1f, contentP)
-                                scaleY = lerp(2f, 1f, contentP)
+                                scaleX = lerp(0.96f, 1f, contentP)
+                                scaleY = lerp(0.96f, 1f, contentP)
                             }
-                            .blur(lerp(8.dp, 0.dp, contentP))
+                            .blur(lerp(4.dp, 0.dp, contentP))
                             .alpha(contentP)
                     ) {
                         BlobMenuRow(icon = Lucide.Archive, label = "Archived Notes", fg = fg, alpha = stagger(contentP, 0)) {
@@ -552,7 +564,7 @@ private fun CircularIconButton(
     val highlight = remember(scope) { InteractiveHighlight(animationScope = scope) }
     Box(
         Modifier
-            .size(40.dp)
+            .size(48.dp)
             .drawBackdrop(
                 backdrop = backdrop,
                 shape = { CircleShape },
@@ -562,7 +574,7 @@ private fun CircularIconButton(
                     lens(10f.dp.toPx(), 20f.dp.toPx())
                 },
                 layerBlock = {
-                    val s = lerp(1f, 1.08f, highlight.pressProgress)
+                    val s = lerp(1f, 1.06f, highlight.pressProgress)
                     scaleX = s
                     scaleY = s
                 },
@@ -575,6 +587,6 @@ private fun CircularIconButton(
             .then(highlight.gestureModifier),
         contentAlignment = Alignment.Center
     ) {
-        Icon(imageVector = icon, contentDescription = cd, tint = fg, modifier = Modifier.size(20.dp))
+        Icon(imageVector = icon, contentDescription = cd, tint = fg, modifier = Modifier.size(22.dp))
     }
 }
