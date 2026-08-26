@@ -31,6 +31,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -158,6 +160,7 @@ fun EditorScreen(
             Modifier
                 .fillMaxSize()
                 .systemBarsPadding()
+                .imePadding()
         ) {
                 Box(
                     Modifier
@@ -346,11 +349,10 @@ fun EditorScreen(
             val interactiveHighlight = remember(menuScope) {
                 InteractiveHighlight(animationScope = menuScope)
             }
-            val sizeEasing = CubicBezierEasing(0.8f, 0.3f, 0.5f, 0.8f)
-            val sizeP by animateFloatAsState(
+            val posP by animateFloatAsState(
                 targetValue = if (menuOpen) 1f else 0f,
-                animationSpec = if (menuOpen) tween(300, easing = sizeEasing) else tween(250, easing = FastOutSlowInEasing),
-                label = "menuSize"
+                animationSpec = spring(dampingRatio = 0.6f, stiffness = 300f),
+                label = "menuPos"
             )
             val radiusP by animateFloatAsState(
                 targetValue = if (menuOpen) 1f else 0f,
@@ -371,11 +373,11 @@ fun EditorScreen(
                 Modifier
                     .align(Alignment.TopEnd)
                     .padding(horizontal = 8.dp, vertical = 8.dp)
-                    .width(lerp(44.dp, 190.dp, sizeP))
-                    .height(lerp(44.dp, 96.dp, sizeP))
+                    .offset(x = lerp(146.dp, 0.dp, posP), y = lerp(-52.dp, 0.dp, posP))
+                    .size(width = 190.dp, height = 96.dp)
                     .drawBackdrop(
                         backdrop = backdrop,
-                        shape = { RoundedCornerShape(lerp(22.dp, 20.dp, radiusP)) },
+                        shape = { RoundedCornerShape(lerp(44.dp, 20.dp, radiusP)) },
                         effects = {
                             vibrancy()
                             blur(4f.dp.toPx())
@@ -398,12 +400,12 @@ fun EditorScreen(
                         } else null,
                         onDrawSurface = {
                             drawRect(
-                                if (dark) Color(0xFF2C2C2E).copy(alpha = lerp(0.9f, 0.4f, sizeP))
-                                else Color(0xFFFAFAFA).copy(alpha = lerp(0.95f, 0.55f, sizeP))
+                                if (dark) Color(0xFF2C2C2E).copy(alpha = lerp(0.9f, 0.4f, posP.coerceIn(0f, 1f)))
+                                else Color(0xFFFAFAFA).copy(alpha = lerp(0.95f, 0.55f, posP.coerceIn(0f, 1f)))
                             )
                         }
                     )
-                    .clip(RoundedCornerShape(lerp(22.dp, 20.dp, radiusP)))
+                    .clip(RoundedCornerShape(lerp(44.dp, 20.dp, radiusP)))
                     .clickable(interactionSource = null, indication = null) {
                         if (!menuOpen) {
                             menuOpen = true
@@ -414,16 +416,6 @@ fun EditorScreen(
                     .then(interactiveHighlight.gestureModifier),
                 contentAlignment = Alignment.TopEnd
             ) {
-                Box(
-                    Modifier.size(44.dp).alpha(dotsAlpha),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Lucide.Ellipsis,
-                        contentDescription = null,
-                        tint = fg
-                    )
-                }
                 if (contentP > 0.01f) {
                     Column(
                         Modifier
