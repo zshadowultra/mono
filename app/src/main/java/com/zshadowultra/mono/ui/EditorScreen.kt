@@ -350,29 +350,19 @@ fun EditorScreen(
                                 }
                                 Spacer(Modifier.weight(1f))
                                 val liveEnabled = state.text.isNotBlank() || state.live
-                                Box(
+                                Surface(
+                                    onClick = { if (liveEnabled) toggleLiveAction() },
+                                    enabled = liveEnabled,
+                                    shape = Capsule(),
+                                    color = if (dark) Color.White.copy(0.08f) else Color.White.copy(0.35f),
                                     modifier = Modifier
                                         .height(48.dp)
                                         .alpha(if (liveEnabled) 1f else 0.35f)
-                                        .drawBackdrop(
-                                            backdrop = backdrop,
-                                            shape = { Capsule() },
-                                            effects = {
-                                                vibrancy()
-                                                blur(4f.dp.toPx())
-                                                lens(10f.dp.toPx(), 20f.dp.toPx())
-                                            },
-                                            onDrawSurface = {
-                                                drawRect(if (dark) Color.White.copy(alpha = 0.06f) else Color.White.copy(alpha = 0.35f))
-                                            }
-                                        )
-                                        .clickable(
-                                            interactionSource = null,
-                                            indication = null,
-                                            enabled = liveEnabled
-                                        ) { toggleLiveAction() },
-                                    contentAlignment = Alignment.Center
                                 ) {
+                                    Box(
+                                        Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
                                     Row(
                                         Modifier.padding(horizontal = 20.dp),
                                         verticalAlignment = Alignment.CenterVertically,
@@ -389,6 +379,7 @@ fun EditorScreen(
                                             fontSize = 16.sp,
                                             color = fg
                                         )
+                                    }
                                     }
                                 }
                                 Spacer(Modifier.weight(1f))
@@ -584,26 +575,15 @@ private fun CircularIconButton(
     Box(
         Modifier
             .size(48.dp)
-            .drawBackdrop(
-                backdrop = backdrop,
-                shape = { CircleShape },
-                effects = {
-                    vibrancy()
-                    blur(2f.dp.toPx())
-                    lens(8f.dp.toPx(), 16f.dp.toPx())
-                },
-                layerBlock = {
-                    val s = lerp(1f, 1.06f, highlight.pressProgress)
-                    scaleX = s
-                    scaleY = s
-                },
-                onDrawSurface = {
-                    drawRect(if (dark) Color.White.copy(alpha = 0.06f) else Color.White.copy(alpha = 0.35f))
-                }
-            )
+            .background(if (dark) Color.White.copy(0.06f) else Color.White.copy(0.35f), CircleShape)
             .clickable(interactionSource = null, indication = null, onClick = onClick)
             .then(highlight.modifier)
-            .then(highlight.gestureModifier),
+            .then(highlight.gestureModifier)
+            .graphicsLayer {
+                val s = lerp(1f, 1.06f, highlight.pressProgress)
+                scaleX = s
+                scaleY = s
+            },
         contentAlignment = Alignment.Center
     ) {
         Icon(imageVector = icon, contentDescription = cd, tint = fg, modifier = Modifier.size(22.dp))
