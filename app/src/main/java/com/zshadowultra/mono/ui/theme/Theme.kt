@@ -27,10 +27,10 @@ val DoneLight = Color(0xFF131313)
 val DotsLight = Color(0xFFFAFAFA)
 
 val InterFamily = FontFamily(
-    Font(R.font.inter_var, FontWeight.Normal, FontStyle.Normal, FontVariation.Settings(FontVariation.weight(400))),
-    Font(R.font.inter_var, FontWeight.Medium, FontStyle.Normal, FontVariation.Settings(FontVariation.weight(500))),
-    Font(R.font.inter_var, FontWeight.SemiBold, FontStyle.Normal, FontVariation.Settings(FontVariation.weight(600))),
-    Font(R.font.inter_var, FontWeight.Bold, FontStyle.Normal, FontVariation.Settings(FontVariation.weight(700))),
+    Font(R.font.inter_var, FontWeight.Normal, FontStyle.Normal, variationSettings = FontVariation.Settings(FontVariation.weight(400))),
+    Font(R.font.inter_var, FontWeight.Medium, FontStyle.Normal, variationSettings = FontVariation.Settings(FontVariation.weight(500))),
+    Font(R.font.inter_var, FontWeight.SemiBold, FontStyle.Normal, variationSettings = FontVariation.Settings(FontVariation.weight(600))),
+    Font(R.font.inter_var, FontWeight.Bold, FontStyle.Normal, variationSettings = FontVariation.Settings(FontVariation.weight(700))),
 )
 val SerifVarFamily = FontFamily(Font(R.font.source_serif4_var))
 val MonoVarFamily = FontFamily(Font(R.font.jetbrains_mono_var))
