@@ -228,8 +228,8 @@ fun EditorScreen(
                                     shadow = null,
                                     effects = {
                                         vibrancy()
-                                        blur(4f.dp.toPx())
-                                        lens(16f.dp.toPx(), 32f.dp.toPx())
+                                        blur(3f.dp.toPx())
+                                        lens(12f.dp.toPx(), 24f.dp.toPx())
                                     },
                                     onDrawSurface = {
                                         drawRect(if (dark) NotepadDark else NotepadLight)
@@ -289,16 +289,9 @@ fun EditorScreen(
                                         .align(Alignment.BottomEnd)
                                         .padding(12.dp)
                                         .size(28.dp)
-                                        .background(Color(0xFFD9F99A), CircleShape),
+                                        .border(1.8.dp, Color(0xFFD9F99A), CircleShape),
                                     contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "${state.text.length}",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = Color(0xFF1A1A1A)
-                                    )
-                                }
+                                ) {}
                             }
                         }
                     }
@@ -313,6 +306,8 @@ fun EditorScreen(
                         .padding(horizontal = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
+                    val doneScope = rememberCoroutineScope()
+                    val doneHighlight = remember(doneScope) { InteractiveHighlight(animationScope = doneScope) }
                     androidx.compose.animation.AnimatedContent(
                         targetState = noteFocused,
                         transitionSpec = {
@@ -329,7 +324,13 @@ fun EditorScreen(
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(52.dp),
+                                    .height(52.dp)
+                                    .graphicsLayer {
+                                        val sc = lerp(1f, 0.97f, doneHighlight.pressProgress)
+                                        scaleX = sc; scaleY = sc
+                                    }
+                                    .then(doneHighlight.modifier)
+                                    .then(doneHighlight.gestureModifier),
                                 shape = RoundedCornerShape(26.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = if (dark) Color.White else DoneLight,
@@ -433,8 +434,8 @@ fun EditorScreen(
                 Modifier
                     .align(Alignment.TopEnd)
                     .padding(horizontal = 8.dp, vertical = 8.dp)
-                    .offset(x = lerp(206.dp, 0.dp, posP), y = lerp(-112.dp, 0.dp, posP))
-                    .size(width = 190.dp, height = 96.dp)
+                    .width(lerp(44.dp, 190.dp, posP))
+                    .height(lerp(44.dp, 96.dp, posP))
                     .drawBackdrop(
                         backdrop = backdrop,
                         shape = { RoundedCornerShape(lerp(44.dp, 20.dp, radiusP)) },
@@ -587,8 +588,8 @@ private fun CircularIconButton(
                 shape = { CircleShape },
                 effects = {
                     vibrancy()
-                    blur(4f.dp.toPx())
-                    lens(10f.dp.toPx(), 20f.dp.toPx())
+                    blur(2f.dp.toPx())
+                    lens(8f.dp.toPx(), 16f.dp.toPx())
                 },
                 layerBlock = {
                     val s = lerp(1f, 1.06f, highlight.pressProgress)
