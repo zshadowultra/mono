@@ -86,6 +86,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.focus.onFocusChanged
 import android.Manifest
 import android.os.Build
 import android.widget.Toast
@@ -123,7 +124,11 @@ fun EditorScreen(
     onOpenSettings: () -> Unit,
 ) {
     val state by vm.state.collectAsState()
-    val dark = isSystemInDarkTheme()
+    val dark = when (state.appearance) {
+        "light" -> false
+        "dark" -> true
+        else -> isSystemInDarkTheme()
+    }
     val bg = if (dark) BgDark else BgLight
     val card = if (dark) CardDark else CardLight
     val fg = if (dark) Color.White else Color.Black
@@ -147,7 +152,7 @@ fun EditorScreen(
             vm.toggleLive(context)
         }
     }
-    val imeVisible = WindowInsets.ime.getBottom(density) > 0
+    var noteFocused by remember { mutableStateOf(false) }
 
     Box(
         Modifier
@@ -173,7 +178,9 @@ fun EditorScreen(
                             CircularIconButton(
                                 icon = Lucide.Archive,
                                 cd = "Archive",
-                                fg = fg
+                                fg = fg,
+                                backdrop = backdrop,
+                                dark = dark
                             ) {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 vm.archive(context)
@@ -195,9 +202,14 @@ fun EditorScreen(
                         .padding(top = 20.dp),
                     contentAlignment = Alignment.TopCenter
                 ) {
+                    val cardWidth by animateFloatAsState(
+                        targetValue = if (noteFocused) 0.96f else 0.78f,
+                        animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),
+                        label = "cardW"
+                    )
                     AnimatedContent(
                         targetState = state.activeId,
-                        modifier = Modifier.fillMaxWidth(0.78f),
+                        modifier = Modifier.fillMaxWidth(cardWidth),
                         transitionSpec = {
                             (
                                 slideInHorizontally(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)) { it } +
@@ -233,12 +245,14 @@ fun EditorScreen(
                                 textStyle = TextStyle(
                                     fontFamily = noteFontFamily(state.font),
                                     fontSize = noteFontSize(state.smallerText),
+                                    letterSpacing = if (state.smallerText) (-0.24).sp else (-0.41).sp,
                                     color = fg,
                                     lineHeight = noteFontSize(state.smallerText) * 1.3f,
                                 ),
                                 cursorBrush = SolidColor(fg),
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .onFocusChanged { noteFocused = it.isFocused }
                                     .padding(16.dp),
                                 decorationBox = { inner ->
                                     Box {
@@ -248,6 +262,8 @@ fun EditorScreen(
                                                 style = TextStyle(
                                                     fontFamily = noteFontFamily(state.font),
                                                     fontSize = noteFontSize(state.smallerText),
+                                                    letterSpacing = if (state.smallerText) (-0.24).sp else (-0.41).sp,
+                                                    lineHeight = noteFontSize(state.smallerText) * 1.3f,
                                                     color = fg.copy(alpha = 0.3f),
                                                 ),
                                             )
@@ -263,6 +279,11 @@ fun EditorScreen(
 
                 Spacer(Modifier.height(12.dp))
 
+                AnimatedVisibility(
+                    visible = noteFocused,
+                    enter = fadeIn(snap()),
+                    exit = fadeOut(snap())
+                ) {
                 Button(
                     onClick = {
                         focusManager.clearFocus()
@@ -280,11 +301,12 @@ fun EditorScreen(
                 ) {
                     Text(text = "Done", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
                 }
+                }
 
                 Spacer(Modifier.weight(1f))
 
                 AnimatedVisibility(
-                    visible = !imeVisible,
+                    visible = !noteFocused,
                     enter = fadeIn(snap()),
                     exit = fadeOut(snap())
                 ) {
@@ -294,17 +316,31 @@ fun EditorScreen(
                             .padding(horizontal = 28.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        CircularIconButton(icon = Lucide.Trash2, cd = "Delete", fg = fg) {
+                        CircularIconButton(icon = Lucide.Trash2, cd = "Delete", fg = fg, backdrop = backdrop, dark = dark) {
                             showDelete = true
                         }
                         Spacer(Modifier.weight(1f))
                         val liveEnabled = state.text.isNotBlank() || state.live
-                        Surface(
-                            onClick = { if (liveEnabled) toggleLiveAction() },
-                            enabled = liveEnabled,
-                            shape = RoundedCornerShape(50),
-                            color = fg.copy(alpha = if (dark) 0.08f else 0.04f),
-                            modifier = Modifier.alpha(if (liveEnabled) 1f else 0.35f)
+                        Box(
+                            modifier = Modifier
+                                .alpha(if (liveEnabled) 1f else 0.35f)
+                                .drawBackdrop(
+                                    backdrop = backdrop,
+                                    shape = { Capsule() },
+                                    effects = {
+                                        vibrancy()
+                                        blur(4f.dp.toPx())
+                                        lens(10f.dp.toPx(), 20f.dp.toPx())
+                                    },
+                                    onDrawSurface = {
+                                        drawRect(if (dark) Color.White.copy(alpha = 0.06f) else Color.White.copy(alpha = 0.35f))
+                                    }
+                                )
+                                .clickable(
+                                    interactionSource = null,
+                                    indication = null,
+                                    enabled = liveEnabled
+                                ) { toggleLiveAction() }
                         ) {
                             Row(
                                 Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
@@ -325,7 +361,7 @@ fun EditorScreen(
                             }
                         }
                         Spacer(Modifier.weight(1f))
-                        CircularIconButton(icon = Lucide.Eraser, cd = "Clear", fg = fg) {
+                        CircularIconButton(icon = Lucide.Eraser, cd = "Clear", fg = fg, backdrop = backdrop, dark = dark) {
                             vm.clearText()
                         }
                     }
@@ -367,7 +403,7 @@ fun EditorScreen(
                 Modifier
                     .align(Alignment.TopEnd)
                     .padding(horizontal = 8.dp, vertical = 8.dp)
-                    .offset(x = lerp(146.dp, 0.dp, posP), y = lerp(-52.dp, 0.dp, posP))
+                    .offset(x = lerp(206.dp, 0.dp, posP), y = lerp(-112.dp, 0.dp, posP))
                     .size(width = 190.dp, height = 96.dp)
                     .drawBackdrop(
                         backdrop = backdrop,
@@ -377,21 +413,6 @@ fun EditorScreen(
                             blur(4f.dp.toPx())
                             lens(16f.dp.toPx(), 32f.dp.toPx())
                         },
-                        layerBlock = if (!menuOpen) {
-                            {
-                                val progress = interactiveHighlight.pressProgress
-                                val scale = lerp(1f, 1f + 4f.dp.toPx() / size.height, progress)
-                                val maxOffset = size.minDimension
-                                val initialDerivative = 0.05f
-                                val offset = interactiveHighlight.offset
-                                translationX = maxOffset * tanh(initialDerivative * offset.x / maxOffset)
-                                translationY = maxOffset * tanh(initialDerivative * offset.y / maxOffset)
-                                val maxDragScale = 4f.dp.toPx() / size.height
-                                val offsetAngle = atan2(offset.y, offset.x)
-                                scaleX = scale + maxDragScale * abs(cos(offsetAngle) * offset.x / size.maxDimension)
-                                scaleY = scale + maxDragScale * abs(sin(offsetAngle) * offset.y / size.maxDimension)
-                            }
-                        } else null,
                         onDrawSurface = {
                             drawRect(
                                 if (dark) Color(0xFF2C2C2E).copy(alpha = lerp(0.9f, 0.4f, posP.coerceIn(0f, 1f)))
@@ -399,15 +420,7 @@ fun EditorScreen(
                             )
                         }
                     )
-                    .clip(RoundedCornerShape(lerp(44.dp, 20.dp, radiusP)))
-                    .clickable(interactionSource = null, indication = null) {
-                        if (!menuOpen) {
-                            menuOpen = true
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        }
-                    }
-                    .then(interactiveHighlight.modifier)
-                    .then(interactiveHighlight.gestureModifier),
+                    .clip(RoundedCornerShape(lerp(44.dp, 20.dp, radiusP))),
                 contentAlignment = Alignment.TopEnd
             ) {
                 if (contentP > 0.01f) {
@@ -430,7 +443,46 @@ fun EditorScreen(
                         }
                     }
                 }
+
+            Box(
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
+                    .size(44.dp)
+                    .alpha(dotsAlpha)
+                    .drawBackdrop(
+                        backdrop = backdrop,
+                        shape = { Capsule() },
+                        effects = {
+                            vibrancy()
+                            blur(2f.dp.toPx())
+                            lens(12f.dp.toPx(), 24f.dp.toPx())
+                        },
+                        layerBlock = {
+                            val progress = interactiveHighlight.pressProgress
+                            val scale = lerp(1f, 1f + 4f.dp.toPx() / size.height, progress)
+                            scaleX = scale
+                            scaleY = scale
+                        },
+                        onDrawSurface = {
+                            drawRect(if (dark) Color(0xFF2C2C2E) else Color(0xFFFAFAFA))
+                        }
+                    )
+                    .clickable(interactionSource = null, indication = null) {
+                        menuOpen = true
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    }
+                    .then(interactiveHighlight.modifier)
+                    .then(interactiveHighlight.gestureModifier),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Lucide.Ellipsis,
+                    contentDescription = null,
+                    tint = fg
+                )
             }
+        }
         }
 
     if (showDelete) {
@@ -489,14 +541,35 @@ private fun CircularIconButton(
     icon: ImageVector,
     cd: String,
     fg: Color,
+    backdrop: LayerBackdrop,
+    dark: Boolean,
     onClick: () -> Unit
 ) {
-    val dark = isSystemInDarkTheme()
+    val scope = rememberCoroutineScope()
+    val highlight = remember(scope) { InteractiveHighlight(animationScope = scope) }
     Box(
         Modifier
-            .size(36.dp)
-            .background(fg.copy(alpha = if (dark) 0.08f else 0.05f), RoundedCornerShape(18.dp))
-            .clickable(interactionSource = null, indication = null, onClick = onClick),
+            .size(40.dp)
+            .drawBackdrop(
+                backdrop = backdrop,
+                shape = { CircleShape },
+                effects = {
+                    vibrancy()
+                    blur(4f.dp.toPx())
+                    lens(10f.dp.toPx(), 20f.dp.toPx())
+                },
+                layerBlock = {
+                    val s = lerp(1f, 1.08f, highlight.pressProgress)
+                    scaleX = s
+                    scaleY = s
+                },
+                onDrawSurface = {
+                    drawRect(if (dark) Color.White.copy(alpha = 0.06f) else Color.White.copy(alpha = 0.35f))
+                }
+            )
+            .clickable(interactionSource = null, indication = null, onClick = onClick)
+            .then(highlight.modifier)
+            .then(highlight.gestureModifier),
         contentAlignment = Alignment.Center
     ) {
         Icon(imageVector = icon, contentDescription = cd, tint = fg, modifier = Modifier.size(20.dp))

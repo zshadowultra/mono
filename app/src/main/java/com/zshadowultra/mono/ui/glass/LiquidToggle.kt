@@ -53,9 +53,10 @@ fun LiquidToggle(
     selected: () -> Boolean,
     onSelect: (Boolean) -> Unit,
     backdrop: Backdrop,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    dark: Boolean = isSystemInDarkTheme()
 ) {
-    val isLightTheme = !isSystemInDarkTheme()
+    val isLightTheme = !dark
     val accentColor =
         if (isLightTheme) Color(0xFF34C759)
         else Color(0xFF30D158)

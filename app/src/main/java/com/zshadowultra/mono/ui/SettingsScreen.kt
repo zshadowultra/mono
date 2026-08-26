@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
@@ -75,6 +76,7 @@ import com.kyant.backdrop.effects.vibrancy
 import com.zshadowultra.mono.data.NoteFont
 import com.zshadowultra.mono.ui.glass.LiquidToggle
 import com.zshadowultra.mono.ui.theme.BgDark
+import com.zshadowultra.mono.ui.theme.noteFontFamily
 import com.zshadowultra.mono.ui.theme.BgLight
 import com.zshadowultra.mono.ui.theme.CardDark
 import com.zshadowultra.mono.ui.theme.CardLight
@@ -89,7 +91,11 @@ fun SettingsScreen(
     onOpenLiveActivity: () -> Unit,
 ) {
     val state by vm.state.collectAsState()
-    val dark = isSystemInDarkTheme()
+    val dark = when (state.appearance) {
+        "light" -> false
+        "dark" -> true
+        else -> isSystemInDarkTheme()
+    }
     val bg = if (dark) BgDark else BgLight
     val card = if (dark) CardDark else CardLight
     val fg = if (dark) Color.White else Color.Black
@@ -134,7 +140,7 @@ fun SettingsScreen(
             Spacer(Modifier.height(12.dp))
             Box(Modifier.padding(horizontal = 16.dp)) {
                 Column {
-                    SettingsCard {
+                    SettingsCard(dark = dark) {
                         SettingsRow(
                             icon = Lucide.Contrast,
                             label = "Appearance",
@@ -162,7 +168,7 @@ fun SettingsScreen(
                         )
                     }
                     Spacer(Modifier.height(20.dp))
-                    SettingsCard {
+                    SettingsCard(dark = dark) {
                         SettingsRow(
                             icon = Lucide.Puzzle,
                             label = "Widget",
@@ -192,7 +198,7 @@ fun SettingsScreen(
                         )
                     }
                     Spacer(Modifier.height(20.dp))
-                    SettingsCard {
+                    SettingsCard(dark = dark) {
                         SettingsRow(
                             icon = Lucide.MessageSquare,
                             label = "Give Feedback",
@@ -389,7 +395,11 @@ private fun AppearancePopover(
 @Composable
 fun NoteTextScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () -> Unit) {
     val state by vm.state.collectAsState()
-    val dark = isSystemInDarkTheme()
+    val dark = when (state.appearance) {
+        "light" -> false
+        "dark" -> true
+        else -> isSystemInDarkTheme()
+    }
     val bg = if (dark) BgDark else BgLight
     val card = if (dark) CardDark else CardLight
     val fg = if (dark) Color.White else Color.Black
@@ -423,7 +433,7 @@ fun NoteTextScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () -> U
         Spacer(Modifier.height(12.dp))
         Box(Modifier.padding(horizontal = 16.dp)) {
             Column {
-                SettingsCard {
+                SettingsCard(dark = dark) {
                     listOf(
                         NoteFont.DEFAULT to "Default",
                         NoteFont.SERIF to "Serif",
@@ -438,12 +448,13 @@ fun NoteTextScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () -> U
                     }
                 }
                 Spacer(Modifier.height(20.dp))
-                SettingsCard {
+                SettingsCard(dark = dark) {
                     SettingsRow(label = "Smaller Text", fg = fg) {
                         LiquidToggle(
                             selected = { state.smallerText },
                             onSelect = { vm.setSmallerText(it) },
-                            backdrop = backdrop
+                            backdrop = backdrop,
+                            dark = dark
                         )
                     }
                 }
@@ -456,7 +467,11 @@ fun NoteTextScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () -> U
 @Composable
 fun LiveActivityScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () -> Unit) {
     val state by vm.state.collectAsState()
-    val dark = isSystemInDarkTheme()
+    val dark = when (state.appearance) {
+        "light" -> false
+        "dark" -> true
+        else -> isSystemInDarkTheme()
+    }
     val bg = if (dark) BgDark else BgLight
     val card = if (dark) CardDark else CardLight
     val fg = if (dark) Color.White else Color.Black
@@ -497,7 +512,8 @@ fun LiveActivityScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () 
             ) {
                 Text(
                     text = if (state.text.isBlank()) "Start typing..." else state.text,
-                    fontSize = 14.sp,
+                    fontFamily = noteFontFamily(state.font),
+                    fontSize = if (state.smallerText) 13.sp else 15.sp,
                     color = fg.copy(alpha = 0.8f),
                     maxLines = 2,
                     modifier = Modifier.padding(horizontal = 20.dp)
@@ -513,7 +529,7 @@ fun LiveActivityScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () 
             Text("Appearance", fontSize = 13.sp, color = fg.copy(alpha = 0.5f))
             Spacer(Modifier.height(8.dp))
             Column {
-                SettingsCard {
+                SettingsCard(dark = dark) {
                     SettingsRow(label = "Default", fg = fg, onClick = { vm.setLaClear(false) }) {
                         if (!state.laClear) Icon(Lucide.Check, null, Modifier.size(16.dp), tint = fg)
                     }
@@ -534,10 +550,10 @@ fun LiveActivityScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () 
 }
 
 @Composable
-private fun SettingsCard(content: @Composable () -> Unit) {
+private fun SettingsCard(dark: Boolean, content: @Composable () -> Unit) {
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (isSystemInDarkTheme()) CardDark else CardLight,
+        color = if (dark) CardDark else CardLight,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column { content() }
@@ -549,6 +565,7 @@ private fun SettingsRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
     label: String,
     fg: Color,
+    labelFontFamily: FontFamily? = null,
     onClick: (() -> Unit)? = null,
     trailing: @Composable () -> Unit = {}
 ) {
@@ -572,7 +589,13 @@ private fun SettingsRow(
         icon?.let {
             Icon(imageVector = it, contentDescription = null, tint = fg, modifier = Modifier.size(18.dp))
         }
-        Text(text = label, fontSize = 15.sp, color = fg, modifier = Modifier.weight(1f))
+        Text(
+            text = label,
+            fontSize = 15.sp,
+            color = fg,
+            fontFamily = labelFontFamily,
+            modifier = Modifier.weight(1f)
+        )
         trailing()
     }
 }

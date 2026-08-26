@@ -110,6 +110,7 @@ class EditorViewModel(app: android.app.Application) : AndroidViewModel(app) {
     fun restore(id: Long, context: Context) {
         viewModelScope.launch {
             repo.restore(id)
+            localText.value = null
             runCatching { updateNoteWidget(context) }
         }
     }

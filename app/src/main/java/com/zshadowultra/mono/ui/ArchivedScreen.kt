@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -51,6 +52,7 @@ import com.composables.icons.lucide.X
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.zshadowultra.mono.data.Note
 import com.zshadowultra.mono.ui.theme.BgDark
+import com.zshadowultra.mono.ui.theme.noteFontFamily
 import com.zshadowultra.mono.ui.theme.BgLight
 import com.zshadowultra.mono.ui.theme.CardDark
 import com.zshadowultra.mono.ui.theme.CardLight
@@ -58,7 +60,11 @@ import com.zshadowultra.mono.ui.theme.CardLight
 @Composable
 fun ArchivedScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () -> Unit) {
     val state by vm.state.collectAsState()
-    val dark = isSystemInDarkTheme()
+    val dark = when (state.appearance) {
+        "light" -> false
+        "dark" -> true
+        else -> isSystemInDarkTheme()
+    }
     val bg = if (dark) BgDark else BgLight
     val card = if (dark) CardDark else CardLight
     val fg = if (dark) Color.White else Color.Black
@@ -141,6 +147,7 @@ fun ArchivedScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () -> U
                         ArchivedRow(
                             note = note,
                             fg = fg,
+                            fontFamily = noteFontFamily(state.font),
                             selecting = selecting,
                             checked = note.id in selected,
                             onToggle = {
@@ -219,6 +226,7 @@ fun ArchivedScreen(backdrop: LayerBackdrop, vm: EditorViewModel, onBack: () -> U
 private fun ArchivedRow(
     note: Note,
     fg: Color,
+    fontFamily: FontFamily,
     selecting: Boolean,
     checked: Boolean,
     onToggle: () -> Unit,
@@ -250,6 +258,7 @@ private fun ArchivedRow(
             Text(
                 text = note.content.ifBlank { " " },
                 fontSize = 15.sp,
+                fontFamily = fontFamily,
                 color = fg,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
