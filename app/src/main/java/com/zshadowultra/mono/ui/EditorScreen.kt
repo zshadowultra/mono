@@ -1,6 +1,7 @@
 package com.zshadowultra.mono.ui
 
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -15,7 +16,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -46,7 +49,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -62,7 +64,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -83,8 +84,6 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.tanh
 import androidx.core.content.ContextCompat
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.focus.FocusRequester
@@ -92,7 +91,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import android.Manifest
 import android.os.Build
-import android.widget.Toast
 import com.composables.icons.lucide.Archive
 import com.composables.icons.lucide.Circle
 import com.composables.icons.lucide.CircleDot
@@ -138,9 +136,9 @@ fun EditorScreen(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val haptic = LocalHapticFeedback.current
-    val density = LocalDensity.current
     var menuOpen by remember { mutableStateOf(false) }
     var showDelete by remember { mutableStateOf(false) }
+    BackHandler(enabled = menuOpen) { menuOpen = false }
 
     val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         vm.toggleLive(context)
@@ -222,9 +220,11 @@ fun EditorScreen(
                         val focusRequester = remember { FocusRequester() }
                         Box(
                             Modifier
+                                .shadow(10.dp, RoundedCornerShape(22.dp), clip = false)
                                 .drawBackdrop(
                                     backdrop = backdrop,
                                     shape = { RoundedCornerShape(22.dp) },
+                                    shadow = null,
                                     effects = {
                                         vibrancy()
                                         blur(4f.dp.toPx())
@@ -317,66 +317,60 @@ fun EditorScreen(
                             }
                         } else {
                             Row(
-                                Modifier
-                                    .fillMaxWidth(),
+                                Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 28.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CircularIconButton(icon = Lucide.Trash2, cd = "Delete", fg = fg, backdrop = backdrop, dark = dark) {
-                            showDelete = true
-                        }
-                        Spacer(Modifier.weight(1f))
-                        val liveEnabled = state.text.isNotBlank() || state.live
-                        Box(
-                            modifier = Modifier
-                                .height(48.dp)
-                                .alpha(if (liveEnabled) 1f else 0.35f)
-                                .drawBackdrop(
-                                    backdrop = backdrop,
-                                    shape = { Capsule() },
-                                    effects = {
-                                        vibrancy()
-                                        blur(4f.dp.toPx())
-                                        lens(10f.dp.toPx(), 20f.dp.toPx())
-                                    },
-                                    onDrawSurface = {
-                                        drawRect(if (dark) Color.White.copy(alpha = 0.06f) else Color.White.copy(alpha = 0.35f))
+                                CircularIconButton(icon = Lucide.Trash2, cd = "Delete", fg = fg, backdrop = backdrop, dark = dark) {
+                                    showDelete = true
+                                }
+                                Spacer(Modifier.weight(1f))
+                                val liveEnabled = state.text.isNotBlank() || state.live
+                                Box(
+                                    modifier = Modifier
+                                        .height(48.dp)
+                                        .alpha(if (liveEnabled) 1f else 0.35f)
+                                        .drawBackdrop(
+                                            backdrop = backdrop,
+                                            shape = { Capsule() },
+                                            effects = {
+                                                vibrancy()
+                                                blur(4f.dp.toPx())
+                                                lens(10f.dp.toPx(), 20f.dp.toPx())
+                                            },
+                                            onDrawSurface = {
+                                                drawRect(if (dark) Color.White.copy(alpha = 0.06f) else Color.White.copy(alpha = 0.35f))
+                                            }
+                                        )
+                                        .clickable(
+                                            interactionSource = null,
+                                            indication = null,
+                                            enabled = liveEnabled
+                                        ) { toggleLiveAction() },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Row(
+                                        Modifier.padding(horizontal = 20.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (state.live) Lucide.CircleDot else Lucide.Circle,
+                                            contentDescription = null,
+                                            tint = fg,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Text(
+                                            text = if (state.live) "Stop Live" else "Go Live",
+                                            fontSize = 16.sp,
+                                            color = fg
+                                        )
                                     }
-                                )
-                                .clickable(
-                                    interactionSource = null,
-                                    indication = null,
-                                    enabled = liveEnabled
-                                ) { toggleLiveAction() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Row(
-                                Modifier.padding(horizontal = 20.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (state.live) Lucide.CircleDot else Lucide.Circle,
-                                    contentDescription = null,
-                                    tint = fg,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Text(
-                                    text = if (state.live) "Stop Live" else "Go Live",
-                                    fontSize = 16.sp,
-                                    color = fg
-                                )
+                                }
+                                Spacer(Modifier.weight(1f))
+                                CircularIconButton(icon = Lucide.Eraser, cd = "Clear", fg = fg, backdrop = backdrop, dark = dark) {
+                                    vm.clearText()
+                                }
                             }
-                        }
-                        Spacer(Modifier.weight(1f))
-                        CircularIconButton(icon = Lucide.Eraser, cd = "Clear", fg = fg, backdrop = backdrop, dark = dark) {
-                            vm.clearText()
-                        }
                         }
                     }
                 }

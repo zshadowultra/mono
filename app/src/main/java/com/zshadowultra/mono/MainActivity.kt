@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -51,6 +52,14 @@ fun MonoAppUi(vm: EditorViewModel = viewModel()) {
         val bg = if (dark) BgDark else BgLight
         val backdrop = rememberLayerBackdrop { drawRect(bg); drawContent() }
         var screen by remember { mutableStateOf(Screen.Editor) }
+
+        BackHandler(enabled = screen != Screen.Editor) {
+            screen = when (screen) {
+                Screen.NoteText, Screen.LiveActivity -> Screen.Settings
+                Screen.Archived, Screen.Settings -> Screen.Editor
+                else -> Screen.Editor
+            }
+        }
 
         AnimatedContent(
             targetState = screen,
