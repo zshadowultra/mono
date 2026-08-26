@@ -261,6 +261,26 @@ fun EditorScreen(
                     }
                 }
 
+                Spacer(Modifier.height(12.dp))
+
+                Button(
+                    onClick = {
+                        focusManager.clearFocus()
+                        vm.done()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(25.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (dark) Color.White else DoneLight,
+                        contentColor = if (dark) Color.Black else Color.White
+                    )
+                ) {
+                    Text(text = "Done", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                }
+
                 Spacer(Modifier.weight(1f))
 
                 AnimatedVisibility(
@@ -311,32 +331,6 @@ fun EditorScreen(
                     }
                 }
 
-                AnimatedVisibility(
-                    visible = imeVisible,
-                    enter = fadeIn(snap()),
-                    exit = fadeOut(snap())
-                ) {
-                    Column(Modifier.windowInsetsPadding(WindowInsets.navigationBars)) {
-                        Button(
-                            onClick = {
-                                focusManager.clearFocus()
-                                vm.done()
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
-                                .height(50.dp),
-                            shape = RoundedCornerShape(25.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (dark) Color.White else DoneLight,
-                                contentColor = if (dark) Color.Black else Color.White
-                            )
-                        ) {
-                            Text(text = "Done", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                        }
-                        Spacer(Modifier.height(12.dp))
-                    }
-                }
             }
         }
 
