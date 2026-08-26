@@ -241,41 +241,63 @@ fun EditorScreen(
                                 ) { focusRequester.requestFocus() }
                         ) {
                             val noteScroll = rememberScrollState()
-                            Box(Modifier.fillMaxSize().verticalScroll(noteScroll)) {
-                            BasicTextField(
-                                value = state.text,
-                                onValueChange = vm::onTextChange,
-                                textStyle = TextStyle(
-                                    fontFamily = noteFontFamily(state.font),
-                                    fontSize = noteFontSize(state.smallerText),
-                                    letterSpacing = if (state.smallerText) (-0.24).sp else (-0.41).sp,
-                                    color = fg,
-                                    lineHeight = noteFontSize(state.smallerText) * 1.3f,
-                                ),
-                                cursorBrush = SolidColor(fg),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .focusRequester(focusRequester)
-                                    .onFocusChanged { noteFocused = it.isFocused }
-                                    .padding(16.dp),
-                                decorationBox = { inner ->
-                                    Box {
-                                        if (state.text.isEmpty()) {
-                                            Text(
-                                                text = "Start typing...",
-                                                style = TextStyle(
-                                                    fontFamily = noteFontFamily(state.font),
-                                                    fontSize = noteFontSize(state.smallerText),
-                                                    letterSpacing = if (state.smallerText) (-0.24).sp else (-0.41).sp,
-                                                    lineHeight = noteFontSize(state.smallerText) * 1.3f,
-                                                    color = fg.copy(alpha = 0.3f),
-                                                ),
-                                            )
-                                        }
-                                        inner()
-                                    }
-                                },
-                            )
+                            Box(Modifier.fillMaxSize()) {
+                                Box(
+                                    Modifier
+                                        .fillMaxSize()
+                                        .verticalScroll(noteScroll)
+                                ) {
+                                    BasicTextField(
+                                        value = state.text,
+                                        onValueChange = vm::onTextChange,
+                                        textStyle = TextStyle(
+                                            fontFamily = noteFontFamily(state.font),
+                                            fontSize = noteFontSize(state.smallerText),
+                                            letterSpacing = if (state.smallerText) (-0.24).sp else (-0.41).sp,
+                                            color = fg,
+                                            lineHeight = noteFontSize(state.smallerText) * 1.3f,
+                                        ),
+                                        cursorBrush = SolidColor(fg),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .focusRequester(focusRequester)
+                                            .onFocusChanged { noteFocused = it.isFocused }
+                                            .padding(16.dp)
+                                            .padding(bottom = 40.dp),
+                                        decorationBox = { inner ->
+                                            Box {
+                                                if (state.text.isEmpty()) {
+                                                    Text(
+                                                        text = "Start typing...",
+                                                        style = TextStyle(
+                                                            fontFamily = noteFontFamily(state.font),
+                                                            fontSize = noteFontSize(state.smallerText),
+                                                            letterSpacing = if (state.smallerText) (-0.24).sp else (-0.41).sp,
+                                                            lineHeight = noteFontSize(state.smallerText) * 1.3f,
+                                                            color = fg.copy(alpha = 0.3f),
+                                                        ),
+                                                    )
+                                                }
+                                                inner()
+                                            }
+                                        },
+                                    )
+                                }
+                                Box(
+                                    Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .padding(12.dp)
+                                        .size(28.dp)
+                                        .background(Color(0xFFD9F99A), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "${state.text.length}",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFF1A1A1A)
+                                    )
+                                }
                             }
                         }
                     }
