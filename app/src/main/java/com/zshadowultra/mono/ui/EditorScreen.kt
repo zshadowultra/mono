@@ -206,7 +206,7 @@ fun EditorScreen(
                     contentAlignment = Alignment.TopCenter
                 ) {
                     val cardWidth by animateFloatAsState(
-                        targetValue = if (noteFocused) 0.96f else 0.78f,
+                        targetValue = if (noteFocused) 0.96f else 0.88f,
                         animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),
                         label = "cardW"
                     )
@@ -290,7 +290,7 @@ fun EditorScreen(
                                         .align(Alignment.BottomEnd)
                                         .padding(12.dp)
                                         .size(28.dp)
-                                        .border(1.8.dp, Color(0xFFD9F99A), CircleShape),
+                                        .border(1.2.dp, fg.copy(alpha = 0.12f), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {}
                             }
