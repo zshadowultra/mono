@@ -12,10 +12,20 @@ android {
         applicationId = "com.zshadowultra.mono"
         minSdk = 31
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionName = "0.1.${System.getenv("GITHUB_RUN_NUMBER") ?: "1"}"
     }
 
+    signingConfigs {
+        getByName("debug") {
+            System.getenv("KEYSTORE_FILE")?.let { f ->
+                storeFile = rootProject.file(f)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = true
