@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
@@ -26,10 +27,10 @@ val DoneLight = Color(0xFF131313)
 val DotsLight = Color(0xFFFAFAFA)
 
 val InterFamily = FontFamily(
-    Font(R.font.inter_var, FontWeight.Normal, FontVariation.Settings(FontVariation.weight(400))),
-    Font(R.font.inter_var, FontWeight.Medium, FontVariation.Settings(FontVariation.weight(500))),
-    Font(R.font.inter_var, FontWeight.SemiBold, FontVariation.Settings(FontVariation.weight(600))),
-    Font(R.font.inter_var, FontWeight.Bold, FontVariation.Settings(FontVariation.weight(700))),
+    Font(R.font.inter_var, FontWeight.Normal, FontStyle.Normal, FontVariation.Settings(FontVariation.weight(400))),
+    Font(R.font.inter_var, FontWeight.Medium, FontStyle.Normal, FontVariation.Settings(FontVariation.weight(500))),
+    Font(R.font.inter_var, FontWeight.SemiBold, FontStyle.Normal, FontVariation.Settings(FontVariation.weight(600))),
+    Font(R.font.inter_var, FontWeight.Bold, FontStyle.Normal, FontVariation.Settings(FontVariation.weight(700))),
 )
 val SerifVarFamily = FontFamily(Font(R.font.source_serif4_var))
 val MonoVarFamily = FontFamily(Font(R.font.jetbrains_mono_var))
